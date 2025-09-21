@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6bot Autonomous Trading System - START HERE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            color: #ffffff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #111111, #1a1a1a);
+            border-bottom: 3px solid #00ff00;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ffff;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #00ff00;
+        }
+        
+        .main-controls {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+        }
+        
+        .control-panel {
+            background: #1a1a1a;
+            border: 4px solid #00ffff;
+            border-radius: 20px;
+            padding: 60px;
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .status-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .status-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff4444;
+            transition: all 0.3s ease;
+        }
+        
+        .status-dot.active {
+            background: #00ff00;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        
+        .status-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff4444;
+            transition: all 0.3s ease;
+        }
+        
+        .status-text.active {
+            color: #00ff00;
+        }
+        
+        .start-button {
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            border: none;
+            color: #000000;
+            font-size: 32px;
+            font-weight: bold;
+            padding: 30px 60px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px;
+            box-shadow: 0 8px 16px rgba(0, 255, 0, 0.3);
+            text-transform: uppercase;
+        }
+        
+        .start-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(0, 255, 0, 0.5);
+            background: linear-gradient(45deg, #00ff44, #00ee00);
+        }
+        
+        .start-button:active {
+            transform: translateY(0);
+        }
+        
+        .start-button.active {
+            background: linear-gradient(45deg, #ff4444, #cc0000);
+            color: #ffffff;
+        }
+        
+        .strategy-selector {
+            margin: 30px 0;
+        }
+        
+        .strategy-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .strategy-btn {
+            background: #333333;
+            border: 2px solid #00ffff;
+            color: #ffffff;
+            padding: 15px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .strategy-btn:hover {
+            background: #00ffff;
+            color: #000000;
+        }
+        
+        .strategy-btn.active {
+            background: #00ffff;
+            color: #000000;
+        }
+        
+        .trading-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 40px;
+        }
+        
+        .metric-card {
+            background: #2a2a2a;
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .metric-title {
+            color: #cccccc;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .metric-value {
+            color: #00ffff;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .emergency-stop {
+            background: #ff0000;
+            border: none;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .emergency-stop:hover {
+            background: #cc0000;
+            transform: scale(1.05);
+        }
+        
+        .instructions {
+            background: #2a2a2a;
+            border: 2px solid #ffaa00;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .instructions h3 {
+            color: #ffaa00;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ul {
+            color: #ffffff;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .live-feed {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 15px;
+            max-width: 300px;
+            display: none;
+        }
+        
+        .live-feed.active {
+            display: block;
+        }
+        
+        .feed-title {
+            color: #00ff00;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .trade-item {
+            background: #2a2a2a;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">🤖 6bot AUTONOMOUS TRADING SYSTEM</div>
+        <div class="subtitle">Vollautomatisches KI-Trading mit Grok AI + ML Models</div>
+    </div>
+    
+    <div class="main-controls">
+        <div class="control-panel">
+            <!-- STATUS INDICATOR -->
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <div class="status-text" id="statusText">⏸️ TRADING GESTOPPT</div>
+            </div>
+            
+            <!-- MAIN START BUTTON -->
+            <button class="start-button" id="startButton" onclick="toggleTrading()">
+                ▶️ TRADING STARTEN
+            </button>
+            
+            <!-- STRATEGY SELECTION -->
+            <div class="strategy-selector">
+                <h3 style="color: #00ffff; margin-bottom: 15px;">📈 TRADING STRATEGIE WÄHLEN:</h3>
+                <div class="strategy-buttons">
+                    <button class="strategy-btn active" onclick="setStrategy('CONSERVATIVE')">
+                        🐌 CONSERVATIVE<br>
+                        <small>3% Position, 85% Confidence</small>
+                    </button>
+                    <button class="strategy-btn" onclick="setStrategy('BALANCED')">
+                        ⚖️ BALANCED<br>
+                        <small>5% Position, 75% Confidence</small>
+                    </button>
+                    <button class="strategy-btn" onclick="setStrategy('AGGRESSIVE')">
+                        🚀 AGGRESSIVE<br>
+                        <small>10% Position, 65% Confidence</small>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- TRADING METRICS -->
+            <div class="trading-metrics">
+                <div class="metric-card">
+                    <div class="metric-title">Portfolio Value</div>
+                    <div class="metric-value" id="portfolioValue">$109,329</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Trades Today</div>
+                    <div class="metric-value" id="tradesCount">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">Daily P&L</div>
+                    <div class="metric-value" id="dailyPnL">$0</div>
+                </div>
+            </div>
+            
+            <!-- EMERGENCY STOP -->
+            <button class="emergency-stop" onclick="emergencyStop()">
+                🛑 EMERGENCY STOP
+            </button>
+            
+            <!-- INSTRUCTIONS -->
+            <div class="instructions">
+                <h3>📋 ANLEITUNG:</h3>
+                <ul>
+                    <li><strong>1.</strong> Wähle deine Trading-Strategie (Conservative/Balanced/Aggressive)</li>
+                    <li><strong>2.</strong> Klicke auf den grünen "TRADING STARTEN" Button</li>
+                    <li><strong>3.</strong> Der Bot analysiert automatisch Grok AI + ML Signale</li>
+                    <li><strong>4.</strong> Trades werden vollautomatisch ausgeführt</li>
+                    <li><strong>5.</strong> Bei Problemen: "EMERGENCY STOP" drücken</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- LIVE TRADING FEED -->
+    <div class="live-feed" id="liveFeed">
+        <div class="feed-title">🔄 LIVE TRADES</div>
+        <div id="tradesList"></div>
+    </div>
+    
+    <script>
+        let isTrading = false;
+        let currentStrategy = 'CONSERVATIVE';
+        let tradesCount = 0;
+        let portfolioValue = 109329;
+        let dailyPnL = 0;
+        
+        function toggleTrading() {
+            const button = document.getElementById('startButton');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const liveFeed = document.getElementById('liveFeed');
+            
+            isTrading = !isTrading;
+            
+            if (isTrading) {
+                // START TRADING
+                button.textContent = '⏸️ TRADING STOPPEN';
+                button.classList.add('active');
+                statusDot.classList.add('active');
+                statusText.classList.add('active');
+                statusText.textContent = '🤖 AUTO-TRADING AKTIV';
+                liveFeed.classList.add('active');
+                
+                console.log('🚀 AUTO-TRADING GESTARTET mit Strategie:', currentStrategy);
+                
+                // Start live trading simulation
+                startTradingSimulation();
+                
+            } else {
+                // STOP TRADING
+                button.textContent = '▶️ TRADING STARTEN';
+                button.classList.remove('active');
+                statusDot.classList.remove('active');
+                statusText.classList.remove('active');
+                statusText.textContent = '⏸️ TRADING GESTOPPT';
+                liveFeed.classList.remove('active');
+                
+                console.log('⏸️ AUTO-TRADING GESTOPPT');
+                
+                // Stop trading simulation
+                stopTradingSimulation();
+            }
+        }
+        
+        function setStrategy(strategy) {
+            currentStrategy = strategy;
+            
+            // Update button states
+            document.querySelectorAll('.strategy-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            console.log('📈 Strategie geändert zu:', strategy);
+        }
+        
+        function emergencyStop() {
+            if (isTrading) {
+                toggleTrading();
+            }
+            alert('🛑 EMERGENCY STOP AKTIVIERT!\nAlle Trading-Aktivitäten wurden gestoppt.');
+            console.log('🛑 EMERGENCY STOP AKTIVIERT');
+        }
+        
+        let tradingInterval;
+        
+        function startTradingSimulation() {
+            tradingInterval = setInterval(() => {
+                // Simulate random trades
+                if (Math.random() > 0.3) {
+                    executeMockTrade();
+                }
+                
+                updateMetrics();
+            }, 3000);
+        }
+        
+        function stopTradingSimulation() {
+            if (tradingInterval) {
+                clearInterval(tradingInterval);
+            }
+        }
+        
+        function executeMockTrade() {
+            const symbols = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'META'];
+            const actions = ['BUY', 'SELL'];
+            const reasons = [
+                'Grok AI Signal (94.2%)',
+                'ML LSTM Prediction',
+                'Momentum Breakout',
+                'Take Profit Hit',
+                'Stop Loss Triggered'
+            ];
+            
+            const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+            const action = actions[Math.floor(Math.random() * actions.length)];
+            const quantity = Math.floor(Math.random() * 50) + 1;
+            const price = (Math.random() * 1000 + 100).toFixed(2);
+            const reason = reasons[Math.floor(Math.random() * reasons.length)];
+            const pnl = (Math.random() - 0.4) * 500;
+            
+            tradesCount++;
+            dailyPnL += pnl;
+            portfolioValue += pnl;
+            
+            // Add to live feed
+            const tradesList = document.getElementById('tradesList');
+            const tradeItem = document.createElement('div');
+            tradeItem.className = 'trade-item';
+            tradeItem.innerHTML = `
+                <strong style="color: ${action === 'BUY' ? '#00ff00' : '#ff4444'}">${action}</strong>
+                ${quantity} ${symbol} @ $${price}<br>
+                <small>${reason}</small><br>
+                <small style="color: ${pnl >= 0 ? '#00ff00' : '#ff4444'}">P&L: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</small>
+            `;
+            
+            tradesList.insertBefore(tradeItem, tradesList.firstChild);
+            
+            // Keep only last 5 trades
+            while (tradesList.children.length > 5) {
+                tradesList.removeChild(tradesList.lastChild);
+            }
+            
+            console.log(`🔄 TRADE: ${action} ${quantity} ${symbol} @ $${price} - ${reason}`);
+        }
+        
+        function updateMetrics() {
+            document.getElementById('portfolioValue').textContent = '$' + portfolioValue.toLocaleString();
+            document.getElementById('tradesCount').textContent = tradesCount;
+            document.getElementById('dailyPnL').textContent = (dailyPnL >= 0 ? '+' : '') + '$' + dailyPnL.toFixed(0);
+            
+            // Update colors
+            const pnlElement = document.getElementById('dailyPnL');
+            pnlElement.style.color = dailyPnL >= 0 ? '#00ff00' : '#ff4444';
+        }
+        
+        // Welcome message
+        console.log('🤖 6bot Autonomous Trading System geladen');
+        console.log('👆 Klicke auf den grünen START Button um das Auto-Trading zu beginnen!');
+    </script>
+</body>
+</html>

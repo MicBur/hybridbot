@@ -1,0 +1,20 @@
+{
+  "name": "6bot-redis-proxy",
+  "version": "1.0.0",
+  "description": "WebSocket to Redis proxy for 6bot trading system",
+  "main": "redis-proxy-server.js",
+  "scripts": {
+    "start": "node redis-proxy-server.js",
+    "dev": "nodemon redis-proxy-server.js"
+  },
+  "dependencies": {
+    "redis": "^4.6.0",
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "keywords": ["redis", "websocket", "proxy", "trading", "6bot"],
+  "author": "6bot",
+  "license": "MIT"
+}

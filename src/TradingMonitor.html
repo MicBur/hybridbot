@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6bot Auto-Trading LIVE Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .monitor-header {
+            background: linear-gradient(90deg, #001100, #003300);
+            border-bottom: 3px solid #00ff00;
+            padding: 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: #ffff00;
+        }
+        
+        .status-main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+            background: #111111;
+        }
+        
+        .status-panel {
+            background: #000000;
+            border: 4px solid #00ff00;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+        }
+        
+        .big-status {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px currentColor;
+        }
+        
+        .status-inactive {
+            color: #ff4444;
+            animation: pulse-red 2s infinite;
+        }
+        
+        .status-active {
+            color: #00ff00;
+            animation: pulse-green 1s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .metric-box {
+            background: #001100;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .metric-label {
+            color: #cccccc;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .metric-value {
+            color: #00ff00;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-start {
+            background: #00ff00;
+            color: #000000;
+        }
+        
+        .btn-stop {
+            background: #ff4444;
+            color: #ffffff;
+        }
+        
+        .btn-emergency {
+            background: #aa0000;
+            color: #ffffff;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.5; }
+        }
+        
+        .live-feed {
+            background: #000000;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        
+        .feed-header {
+            color: #00ff00;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 10px;
+        }
+        
+        .trade-log {
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .trade-entry {
+            margin: 5px 0;
+            padding: 8px;
+            background: #001100;
+            border-radius: 5px;
+            border-left: 3px solid #00ff00;
+        }
+        
+        .trade-entry.buy {
+            border-left-color: #00ff00;
+            background: #001100;
+        }
+        
+        .trade-entry.sell {
+            border-left-color: #ff4444;
+            background: #110000;
+        }
+        
+        .timestamp {
+            color: #888888;
+            font-size: 10px;
+        }
+        
+        .symbol {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        
+        .profit {
+            color: #00ff00;
+        }
+        
+        .loss {
+            color: #ff4444;
+        }
+        
+        .console-output {
+            background: #000000;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            color: #00ff00;
+        }
+        
+        .strategy-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .strategy-badge {
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .strategy-conservative {
+            background: #003300;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+        }
+        
+        .strategy-balanced {
+            background: #333300;
+            color: #ffff00;
+            border: 2px solid #ffff00;
+        }
+        
+        .strategy-aggressive {
+            background: #330000;
+            color: #ff4444;
+            border: 2px solid #ff4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="monitor-header">
+        <div class="title">🤖 6bot AUTO-TRADING LIVE MONITOR</div>
+        <div class="subtitle">Real-Time Trading Status & Activity Monitor</div>
+    </div>
+    
+    <div class="status-main">
+        <div class="status-panel">
+            <div class="big-status status-inactive" id="mainStatus">
+                ⏸️ AUTO-TRADING GESTOPPT
+            </div>
+            
+            <div class="strategy-indicator">
+                <div class="strategy-badge strategy-conservative" id="strategyBadge">
+                    🐌 CONSERVATIVE STRATEGY
+                </div>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-box">
+                    <div class="metric-label">Trades Today</div>
+                    <div class="metric-value" id="tradesCount">0</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Portfolio Value</div>
+                    <div class="metric-value" id="portfolioValue">$109,329</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">P&L Today</div>
+                    <div class="metric-value" id="dailyPnL">$0.00</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Success Rate</div>
+                    <div class="metric-value" id="successRate">0%</div>
+                </div>
+            </div>
+            
+            <div class="control-buttons">
+                <button class="btn btn-start" onclick="startTrading()">▶️ START TRADING</button>
+                <button class="btn btn-stop" onclick="stopTrading()">⏸️ STOP TRADING</button>
+                <button class="btn btn-emergency" onclick="emergencyStop()">🛑 EMERGENCY</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="live-feed">
+        <div class="feed-header">📊 LIVE TRADING ACTIVITY FEED</div>
+        <div class="trade-log" id="tradeLog">
+            <div style="text-align: center; color: #666666; margin-top: 50px;">
+                Warte auf Auto-Trading Start...<br>
+                Klicke "START TRADING" um Live-Aktivität zu sehen
+            </div>
+        </div>
+    </div>
+    
+    <div class="console-output" id="consoleOutput">
+        <div style="color: #00ff00;">6bot Auto-Trading Monitor gestartet...</div>
+        <div style="color: #888888;">System bereit. Warte auf Trading-Start.</div>
+    </div>
+    
+    <script>
+        let isTrading = false;
+        let tradesCount = 0;
+        let portfolioValue = 109329;
+        let dailyPnL = 0;
+        let successfulTrades = 0;
+        let currentStrategy = 'CONSERVATIVE';
+        let tradingInterval;
+        
+        function startTrading() {
+            if (isTrading) return;
+            
+            isTrading = true;
+            const statusElement = document.getElementById('mainStatus');
+            statusElement.textContent = '🤖 AUTO-TRADING AKTIV';
+            statusElement.className = 'big-status status-active';
+            
+            logToConsole('🚀 AUTO-TRADING GESTARTET');
+            logToConsole(`📈 Strategie: ${currentStrategy}`);
+            logToConsole('🔄 Beginne KI-Analyse...');
+            
+            // Start live trading simulation
+            tradingInterval = setInterval(() => {
+                performTradingAnalysis();
+            }, 3000);
+            
+            // Clear waiting message
+            document.getElementById('tradeLog').innerHTML = '';
+        }
+        
+        function stopTrading() {
+            if (!isTrading) return;
+            
+            isTrading = false;
+            const statusElement = document.getElementById('mainStatus');
+            statusElement.textContent = '⏸️ AUTO-TRADING GESTOPPT';
+            statusElement.className = 'big-status status-inactive';
+            
+            if (tradingInterval) {
+                clearInterval(tradingInterval);
+            }
+            
+            logToConsole('⏸️ AUTO-TRADING GESTOPPT');
+            logToConsole('📊 Session beendet');
+        }
+        
+        function emergencyStop() {
+            stopTrading();
+            logToConsole('🛑 EMERGENCY STOP AKTIVIERT!');
+            logToConsole('⚠️ Alle Positionen werden geschlossen');
+            alert('🛑 EMERGENCY STOP!\n\nAlle Trading-Aktivitäten wurden sofort gestoppt!');
+        }
+        
+        function performTradingAnalysis() {
+            // Simulate AI analysis and potential trades
+            logToConsole('🧠 Grok AI analysiert Märkte...');
+            
+            setTimeout(() => {
+                if (Math.random() > 0.3) {
+                    executeTrade();
+                } else {
+                    logToConsole('📊 Keine Trading-Gelegenheit gefunden');
+                }
+            }, 1000);
+        }
+        
+        function executeTrade() {
+            const symbols = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'META', 'AMZN', 'NFLX', 'AMD', 'CRM'];
+            const actions = ['BUY', 'SELL'];
+            const reasons = [
+                'Grok AI Signal (92.4%)',
+                'ML LSTM Prediction',
+                'Momentum Breakout',
+                'Support Level Hit',
+                'Resistance Break',
+                'Volume Spike Detected'
+            ];
+            
+            const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+            const action = actions[Math.floor(Math.random() * actions.length)];
+            const quantity = Math.floor(Math.random() * 50) + 1;
+            const price = (Math.random() * 1000 + 100).toFixed(2);
+            const reason = reasons[Math.floor(Math.random() * reasons.length)];
+            const pnl = (Math.random() - 0.45) * 800; // Slight positive bias
+            
+            tradesCount++;
+            dailyPnL += pnl;
+            portfolioValue += pnl;
+            
+            if (pnl > 0) successfulTrades++;
+            
+            // Update metrics
+            updateMetrics();
+            
+            // Log to console
+            logToConsole(`🔄 TRADE: ${action} ${quantity} ${symbol} @ $${price}`);
+            logToConsole(`📈 Grund: ${reason}`);
+            logToConsole(`💰 P&L: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`);
+            
+            // Add to trade feed
+            addTradeToFeed(action, symbol, quantity, price, reason, pnl);
+        }
+        
+        function addTradeToFeed(action, symbol, quantity, price, reason, pnl) {
+            const tradeLog = document.getElementById('tradeLog');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const tradeEntry = document.createElement('div');
+            tradeEntry.className = `trade-entry ${action.toLowerCase()}`;
+            tradeEntry.innerHTML = `
+                <div class="timestamp">[${timestamp}]</div>
+                <div><strong>${action}</strong> <span class="symbol">${quantity} ${symbol}</span> @ $${price}</div>
+                <div style="font-size: 11px; color: #cccccc;">${reason}</div>
+                <div class="${pnl >= 0 ? 'profit' : 'loss'}">P&L: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</div>
+            `;
+            
+            tradeLog.insertBefore(tradeEntry, tradeLog.firstChild);
+            
+            // Keep only last 20 trades
+            while (tradeLog.children.length > 20) {
+                tradeLog.removeChild(tradeLog.lastChild);
+            }
+        }
+        
+        function updateMetrics() {
+            document.getElementById('tradesCount').textContent = tradesCount;
+            document.getElementById('portfolioValue').textContent = '$' + portfolioValue.toLocaleString();
+            
+            const pnlElement = document.getElementById('dailyPnL');
+            pnlElement.textContent = (dailyPnL >= 0 ? '+' : '') + '$' + dailyPnL.toFixed(2);
+            pnlElement.style.color = dailyPnL >= 0 ? '#00ff00' : '#ff4444';
+            
+            const successRate = tradesCount > 0 ? (successfulTrades / tradesCount * 100).toFixed(1) : 0;
+            document.getElementById('successRate').textContent = successRate + '%';
+        }
+        
+        function logToConsole(message) {
+            const consoleOutput = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span style="color: #666666;">[${timestamp}]</span> ${message}`;
+            
+            consoleOutput.insertBefore(logEntry, consoleOutput.firstChild);
+            
+            // Keep only last 15 entries
+            while (consoleOutput.children.length > 15) {
+                consoleOutput.removeChild(consoleOutput.lastChild);
+            }
+            
+            // Also log to browser console
+            console.log(`[6bot] ${message}`);
+        }
+        
+        // Initialize
+        logToConsole('🤖 6bot Auto-Trading Monitor bereit');
+        logToConsole('👆 Klicke "START TRADING" um zu beginnen');
+        
+        // Update time display
+        setInterval(() => {
+            if (isTrading) {
+                logToConsole('⏰ System läuft - suche Trading-Gelegenheiten...');
+            }
+        }, 30000); // Every 30 seconds
+    </script>
+</body>
+</html>

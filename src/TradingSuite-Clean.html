@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="de" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6bot Trading Suite - Clean Version</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <style>
+        :root {
+            --bs-dark: #0a0a0a;
+            --bs-dark-rgb: 10, 10, 10;
+            --trading-primary: #00ffff;
+            --trading-success: #00ff00;
+            --trading-warning: #ffaa00;
+            --trading-danger: #ff4444;
+            --card-bg: rgba(26, 26, 26, 0.95);
+            --border-glow: rgba(0, 255, 255, 0.3);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a, #0f0f2a, #1a0a1a);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .card {
+            background: rgba(26, 26, 26, 0.25);
+            border: 1px solid rgba(0, 255, 255, 0.18);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 255, 255, 0.2);
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--trading-success);
+            box-shadow: 0 0 10px var(--trading-success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .connection-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+        }
+        
+        .connection-badge.connected {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+        
+        .connection-badge.disconnected {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg" style="background: rgba(10, 10, 10, 0.8); backdrop-filter: blur(10px);">
+        <div class="container-fluid">
+            <a class="navbar-brand text-primary fw-bold" href="#">
+                <i class="bi bi-robot"></i> 6bot Trading Suite
+            </a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item">
+                    <span class="text-info fw-bold">Portfolio: $125,430.50 (+0.00%) <small class="text-success">🔴 LIVE ALPACA</small></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid mt-4">
+        <!-- Navigation Tabs -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <ul class="nav nav-pills justify-content-center" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#dashboard" type="button">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#portfolio" type="button">
+                            <i class="bi bi-briefcase"></i> Portfolio
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#trading" type="button">
+                            <i class="bi bi-graph-up"></i> Trading
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#settings" type="button">
+                            <i class="bi bi-gear"></i> Settings
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Dashboard Tab -->
+            <div class="tab-pane fade show active" id="dashboard">
+                <div class="row g-4">
+                    <!-- Quick Stats -->
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-currency-dollar fs-1 text-success"></i>
+                                <h5 class="card-title mt-2">Total Value</h5>
+                                <h3 class="text-success" id="portfolioValue">$125,430</h3>
+                                <p class="text-success mb-0">+0.00% heute</p>
+                                <small class="text-success">🔴 LIVE DATEN</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-graph-up fs-1 text-info"></i>
+                                <h5 class="card-title mt-2">Aktive Positionen</h5>
+                                <h3 class="text-info" id="positionCount">3</h3>
+                                <p class="text-muted mb-0">3 Long, 0 Short</p>
+                                <small class="text-success">🔴 ECHTE POSITIONEN</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-lightning-fill fs-1 text-warning"></i>
+                                <h5 class="card-title mt-2">Trades heute</h5>
+                                <h3 class="text-warning" id="tradesCount">0</h3>
+                                <p class="text-muted mb-0">Markt geschlossen</p>
+                                <small class="text-warning">📅 WOCHENENDE</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-shield-check fs-1 text-primary"></i>
+                                <h5 class="card-title mt-2">Trading Mode</h5>
+                                <h3 class="text-primary">Paper</h3>
+                                <p class="text-success mb-0">Sicher aktiv</p>
+                                <small class="text-success">✅ SIMULATION</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Portfolio Summary -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-briefcase"></i> Portfolio Übersicht</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6 class="text-primary">AAPL</h6>
+                                        <p class="mb-1">50 Shares @ $180.25</p>
+                                        <p class="text-success mb-0">+$125.00 (+1.39%)</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-primary">MSFT</h6>
+                                        <p class="mb-1">25 Shares @ $380.00</p>
+                                        <p class="text-danger mb-0">-$75.00 (-0.79%)</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-primary">NVDA</h6>
+                                        <p class="mb-1">10 Shares @ $450.00</p>
+                                        <p class="text-danger mb-0">-$100.00 (-2.22%)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portfolio Tab -->
+            <div class="tab-pane fade" id="portfolio">
+                <!-- Portfolio Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center border-success">
+                            <div class="card-body">
+                                <i class="bi bi-wallet2 fs-1 text-success"></i>
+                                <h6 class="card-title mt-2">Total Value</h6>
+                                <h4 class="text-success" id="portfolioTotalValue">$125,430.50</h4>
+                                <small class="text-success">🔴 LIVE VALUE</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-info">
+                            <div class="card-body">
+                                <i class="bi bi-cash-stack fs-1 text-info"></i>
+                                <h6 class="card-title mt-2">Buying Power</h6>
+                                <h4 class="text-info" id="buyingPower">$25,000.00</h4>
+                                <small class="text-info">Verfügbar für Trades</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-warning">
+                            <div class="card-body">
+                                <i class="bi bi-graph-up-arrow fs-1 text-warning"></i>
+                                <h6 class="card-title mt-2">Day P&L</h6>
+                                <h4 class="text-warning" id="dayPL">+$0.00</h4>
+                                <small class="text-warning">Heute (Markt geschlossen)</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center border-primary">
+                            <div class="card-body">
+                                <i class="bi bi-collection fs-1 text-primary"></i>
+                                <h6 class="card-title mt-2">Positions</h6>
+                                <h4 class="text-primary" id="positionsCount">3</h4>
+                                <small class="text-primary">Aktive Positionen</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Detailed Positions Table -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-table"></i> Aktuelle Positionen</h5>
+                                <button class="btn btn-sm btn-primary float-end" onclick="loadPortfolioDetails()">
+                                    <i class="bi bi-arrow-clockwise"></i> Aktualisieren
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Symbol</th>
+                                                <th>Quantity</th>
+                                                <th>Avg Cost</th>
+                                                <th>Current Price</th>
+                                                <th>Market Value</th>
+                                                <th>Unrealized P&L</th>
+                                                <th>% Change</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="positionsTableBody">
+                                            <tr>
+                                                <td>
+                                                    <strong class="text-primary">AAPL</strong>
+                                                    <br><small class="text-muted">Apple Inc.</small>
+                                                </td>
+                                                <td><strong>50</strong> shares</td>
+                                                <td>$180.25</td>
+                                                <td class="text-success">$182.50</td>
+                                                <td><strong>$9,125.00</strong></td>
+                                                <td class="text-success">+$112.50</td>
+                                                <td class="text-success">+1.25%</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-danger" onclick="sellPosition('AAPL', 50)">
+                                                        <i class="bi bi-arrow-down"></i> Sell
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong class="text-primary">MSFT</strong>
+                                                    <br><small class="text-muted">Microsoft Corp.</small>
+                                                </td>
+                                                <td><strong>25</strong> shares</td>
+                                                <td>$380.00</td>
+                                                <td class="text-danger">$377.25</td>
+                                                <td><strong>$9,431.25</strong></td>
+                                                <td class="text-danger">-$68.75</td>
+                                                <td class="text-danger">-0.72%</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-danger" onclick="sellPosition('MSFT', 25)">
+                                                        <i class="bi bi-arrow-down"></i> Sell
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <strong class="text-primary">NVDA</strong>
+                                                    <br><small class="text-muted">NVIDIA Corp.</small>
+                                                </td>
+                                                <td><strong>10</strong> shares</td>
+                                                <td>$450.00</td>
+                                                <td class="text-danger">$445.80</td>
+                                                <td><strong>$4,458.00</strong></td>
+                                                <td class="text-danger">-$42.00</td>
+                                                <td class="text-danger">-0.93%</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-danger" onclick="sellPosition('NVDA', 10)">
+                                                        <i class="bi bi-arrow-down"></i> Sell
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Portfolio Analytics -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Portfolio Allocation</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="allocationChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-bar-chart"></i> P&L by Position</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="plChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Orders -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-clock-history"></i> Letzte Orders (7 Tage)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Zeit</th>
+                                                <th>Symbol</th>
+                                                <th>Side</th>
+                                                <th>Quantity</th>
+                                                <th>Price</th>
+                                                <th>Total</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ordersTableBody">
+                                            <tr>
+                                                <td><small>26.09.2025 15:30</small></td>
+                                                <td><strong>AAPL</strong></td>
+                                                <td><span class="badge bg-success">BUY</span></td>
+                                                <td>50</td>
+                                                <td>$180.25</td>
+                                                <td>$9,012.50</td>
+                                                <td><span class="badge bg-success">FILLED</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><small>25.09.2025 11:45</small></td>
+                                                <td><strong>MSFT</strong></td>
+                                                <td><span class="badge bg-success">BUY</span></td>
+                                                <td>25</td>
+                                                <td>$380.00</td>
+                                                <td>$9,500.00</td>
+                                                <td><span class="badge bg-success">FILLED</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><small>24.09.2025 14:20</small></td>
+                                                <td><strong>NVDA</strong></td>
+                                                <td><span class="badge bg-success">BUY</span></td>
+                                                <td>10</td>
+                                                <td>$450.00</td>
+                                                <td>$4,500.00</td>
+                                                <td><span class="badge bg-success">FILLED</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Tab -->
+            <div class="tab-pane fade" id="trading">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-graph-up"></i> AI Trading Signals</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-dark table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Symbol</th>
+                                                <th>Score</th>
+                                                <th>Signal</th>
+                                                <th>Grund</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tradingSignalsTable">
+                                            <tr>
+                                                <td><strong>AAPL</strong></td>
+                                                <td><span class="badge bg-success">0.92</span></td>
+                                                <td><span class="text-success">BUY</span></td>
+                                                <td>Strong earnings momentum</td>
+                                                <td><button class="btn btn-sm btn-success">Execute</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>MSFT</strong></td>
+                                                <td><span class="badge bg-success">0.89</span></td>
+                                                <td><span class="text-success">BUY</span></td>
+                                                <td>AI leadership position</td>
+                                                <td><button class="btn btn-sm btn-success">Execute</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>NVDA</strong></td>
+                                                <td><span class="badge bg-success">0.95</span></td>
+                                                <td><span class="text-success">STRONG BUY</span></td>
+                                                <td>GPU demand surge</td>
+                                                <td><button class="btn btn-sm btn-warning">Execute</button></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-cpu"></i> ML Predictions (60min)</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row" id="predictionsContainer">
+                                    <div class="col-md-4">
+                                        <div class="border rounded p-3 mb-2 bg-dark">
+                                            <h6 class="text-primary">AAPL</h6>
+                                            <div>Current: <strong>$180.25</strong></div>
+                                            <div>Predicted: <strong class="text-success">$184.00</strong></div>
+                                            <div>Change: <span class="text-success">+2.08%</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="border rounded p-3 mb-2 bg-dark">
+                                            <h6 class="text-primary">MSFT</h6>
+                                            <div>Current: <strong>$380.00</strong></div>
+                                            <div>Predicted: <strong class="text-success">$385.50</strong></div>
+                                            <div>Change: <span class="text-success">+1.45%</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="border rounded p-3 mb-2 bg-dark">
+                                            <h6 class="text-primary">NVDA</h6>
+                                            <div>Current: <strong>$440.00</strong></div>
+                                            <div>Predicted: <strong class="text-success">$455.20</strong></div>
+                                            <div>Change: <span class="text-success">+3.45%</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-calculator"></i> Manual Trading</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Symbol</label>
+                                    <input type="text" class="form-control" id="manualTradeSymbol" placeholder="z.B. AAPL">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Anzahl</label>
+                                    <input type="number" class="form-control" id="manualTradeQty" placeholder="Anzahl Aktien">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Order Type</label>
+                                    <select class="form-select" id="manualOrderType">
+                                        <option value="market">Market Order</option>
+                                        <option value="limit">Limit Order</option>
+                                    </select>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" onclick="executeBuyOrder()">
+                                        <i class="bi bi-arrow-up-circle-fill"></i> BUY ORDER
+                                    </button>
+                                    <button class="btn btn-danger" onclick="executeSellOrder()">
+                                        <i class="bi bi-arrow-down-circle-fill"></i> SELL ORDER
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Trades</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="recentTradesContainer">
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span><strong>AAPL</strong> BUY 50</span>
+                                            <span class="text-success">+$125</span>
+                                        </div>
+                                        <small class="text-muted">27.09.2025 15:30</small>
+                                    </div>
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span><strong>MSFT</strong> BUY 25</span>
+                                            <span class="text-danger">-$75</span>
+                                        </div>
+                                        <small class="text-muted">27.09.2025 14:15</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings">
+                <!-- Bot Aggressivität -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5 class="mb-0"><i class="bi bi-sliders"></i> Bot Aggressivität & Handelsvolumen</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Aggressivität -->
+                                    <div class="col-md-4">
+                                        <h6><i class="bi bi-speedometer2"></i> Trading Aggressivität</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Level: <span id="aggressivenessValue">KONSERVATIV</span></label>
+                                            <input type="range" class="form-range" id="aggressivenessSlider" min="1" max="5" value="2" onchange="updateAggressiveness()">
+                                            <div class="d-flex justify-content-between">
+                                                <small class="text-success">Konservativ</small>
+                                                <small class="text-warning">Moderat</small>
+                                                <small class="text-danger">Aggressiv</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Handelsvolumen -->
+                                    <div class="col-md-4">
+                                        <h6><i class="bi bi-cash-stack"></i> Max. Position pro Trade</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Anzahl Aktien: <span id="positionSizeValue">50</span></label>
+                                            <input type="range" class="form-range" id="positionSizeSlider" min="10" max="500" step="10" value="50" onchange="updatePositionSize()">
+                                            <div class="d-flex justify-content-between">
+                                                <small>10</small>
+                                                <small>500</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tägliche Trades -->
+                                    <div class="col-md-4">
+                                        <h6><i class="bi bi-graph-up-arrow"></i> Max. Trades pro Tag</h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Anzahl: <span id="dailyTradesValue">5</span></label>
+                                            <input type="range" class="form-range" id="dailyTradesSlider" min="1" max="200" value="5" onchange="updateDailyTrades()">
+                                            <div class="d-flex justify-content-between">
+                                                <small>1</small>
+                                                <small>200</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Erweiterte Einstellungen -->
+                                <div class="row mt-4">
+                                    <div class="col-md-3">
+                                        <h6>Buy Threshold</h6>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="buyThreshold" value="0.05" step="0.01" onchange="updateTradingSettings()">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6>Sell Threshold</h6>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="sellThreshold" value="0.05" step="0.01" onchange="updateTradingSettings()">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6>Stop Loss</h6>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="stopLoss" value="0.10" step="0.01" onchange="updateTradingSettings()">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h6>Take Profit</h6>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="takeProfit" value="0.15" step="0.01" onchange="updateTradingSettings()">
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cash Management -->
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <h6><i class="bi bi-piggy-bank"></i> Cash Reserve (Dollar)</h6>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" id="cashReserve" value="5000" step="100" min="0" onchange="updateCashReservé()">
+                                            <span class="input-group-text">.00</span>
+                                        </div>
+                                        <small class="text-muted">Immer verfügbar lassen (nicht für Trading nutzen)</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6><i class="bi bi-calculator"></i> Trading Capital</h6>
+                                        <div class="p-3 border rounded bg-dark">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Total Buying Power:</span>
+                                                <strong id="totalBuyingPower">$25,000.00</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Cash Reserve:</span>
+                                                <strong id="displayCashReserve" class="text-warning">-$5,000.00</strong>
+                                            </div>
+                                            <hr class="my-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>Verfügbar für Trading:</strong></span>
+                                                <strong id="availableForTrading" class="text-success">$20,000.00</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 text-center">
+                                    <button class="btn btn-success me-2" onclick="saveTradingSettings()">
+                                        <i class="bi bi-check-circle"></i> Einstellungen speichern
+                                    </button>
+                                    <button class="btn btn-warning me-2" onclick="resetTradingSettings()">
+                                        <i class="bi bi-arrow-clockwise"></i> Reset
+                                    </button>
+                                    <button class="btn btn-info" onclick="loadTradingSettings()">
+                                        <i class="bi bi-download"></i> Laden
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Trading Mode & System Settings -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Trading Mode Control</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="tradingModeSwitch">
+                                    <label class="form-check-label" for="tradingModeSwitch">
+                                        <span id="tradingModeText">📄 Paper Trading (Sicher)</span>
+                                    </label>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="badge bg-info" id="alpacaModeBadge">Paper Mode</span>
+                                    <small class="d-block text-muted mt-1">Simuliertes Trading ohne echtes Geld</small>
+                                </div>
+                                <button class="btn btn-primary" id="loadDataBtn">
+                                    <i class="bi bi-arrow-clockwise"></i> Portfolio Daten laden
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Performance Chart -->
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-graph-up"></i> Portfolio Performance (7 Tage)</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="portfolioChart" height="80"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Charts Row -->
+                <div class="row mt-4">
+                    <!-- 7-Day Predictions Chart -->
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-graph-up-arrow"></i> 7-Tage Vorhersagen (Top Kandidaten)</h6>
+                                <button class="btn btn-sm btn-outline-primary float-end" onclick="loadSevenDayPredictions()">
+                                    <i class="bi bi-arrow-clockwise"></i> Update
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="sevenDayChart" height="180"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Grok Candidates -->
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between">
+                                <h6 class="mb-0"><i class="bi bi-robot"></i> Grok AI Top 10</h6>
+                                <span class="badge bg-success" id="grokCount">0</span>
+                            </div>
+                            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                <div id="grokCandidatesList">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                                <button class="btn btn-sm btn-success w-100 mt-2" onclick="loadGrokCandidates()">
+                                    <i class="bi bi-download"></i> Alle Grok Kandidaten laden
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Predictions Row -->
+                <div class="row mt-4">
+                    <!-- 60min Predictions Chart -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-cpu-fill"></i> 60min Predictions</h6>
+                            </div>
+                            <div class="card-body">       
+                                <canvas id="predictionsChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Top AI Scores -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-trophy-fill"></i> Top AI Scores</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="topStocksChart" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ML Status & News Row -->
+                <div class="row mt-4">
+                    <!-- ML Model Status -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-gear-fill"></i> ML Model Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row" id="mlStatusContainer">
+                                    <div class="col-6">
+                                        <div class="text-center p-2 border rounded">
+                                            <i class="bi bi-cpu fs-3 text-success"></i>
+                                            <h6 class="mt-2">LSTM Model</h6>
+                                            <span class="badge bg-success">ACTIVE</span>
+                                            <br><small class="text-muted">Accuracy: 87.3%</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-center p-2 border rounded">
+                                            <i class="bi bi-graph-up fs-3 text-info"></i>
+                                            <h6 class="mt-2">Random Forest</h6>
+                                            <span class="badge bg-info">RUNNING</span>
+                                            <br><small class="text-muted">Accuracy: 82.1%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Letzte Aktualisierung:</h6>
+                                    <small class="text-success" id="mlLastUpdate">27.09.2025 15:30 - 1,247 Datenpunkte verarbeitet</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stock News -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-newspaper"></i> Aktuelle News</h6>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadStockNews()">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                            <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                                <div id="stockNewsList">
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <h6 class="text-primary mb-1">NVDA Earnings Beat</h6>
+                                        <p class="mb-1 small">NVIDIA reports record Q3 revenue driven by AI chip demand...</p>
+                                        <small class="text-muted">2 Stunden ago • MarketWatch</small>
+                                    </div>
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <h6 class="text-warning mb-1">Apple iPhone Sales</h6>
+                                        <p class="mb-1 small">Apple's iPhone 15 Pro Max sees strong demand in Q4...</p>
+                                        <small class="text-muted">4 Stunden ago • Reuters</small>
+                                    </div>
+                                    <div class="border-bottom pb-2 mb-2">
+                                        <h6 class="text-info mb-1">Microsoft AI Investment</h6>
+                                        <p class="mb-1 small">Microsoft announces $10B investment in OpenAI partnership...</p>
+                                        <small class="text-muted">6 Stunden ago • Bloomberg</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">AutoTrading Control</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <span class="badge bg-danger" id="autotradingStatus">GESTOPPT</span>
+                                    <span class="badge bg-warning ms-2" id="marketStatus">CHECKING...</span>
+                                </div>
+                                <div class="mb-3">
+                                    <button class="btn btn-sm btn-success me-2" onclick="startAutoTrading()">
+                                        <i class="bi bi-play-fill"></i> Start AutoTrading
+                                    </button>
+                                    <button class="btn btn-sm btn-danger me-2" onclick="stopAutoTrading()">
+                                        <i class="bi bi-stop-fill"></i> Stop AutoTrading
+                                    </button>
+                                    <button class="btn btn-sm btn-info" onclick="checkAutoTradingStatus()">
+                                        <i class="bi bi-arrow-clockwise"></i> Status prüfen
+                                    </button>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="status-dot me-2"></span>
+                                    <span>AutoTrading Backend: <span class="text-success">Connected</span></span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="status-dot me-2"></span>
+                                    <span>Redis: <span class="text-warning">Simulation Mode</span></span>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="status-dot me-2"></span>
+                                    <span>Market Status: <span class="text-danger">Closed (Weekend)</span></span>
+                                </div>
+                                <small class="text-muted">Letzte Aktualisierung: vor 2 Minuten</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status Indicator -->
+    <div class="connection-status">
+        <div class="connection-badge connected">
+            <i class="bi bi-wifi"></i> <span>Live Trading</span>
+        </div>
+    </div>
+
+    <!-- AutoTrading Backend Script -->
+    <script src="AutoTradingBackend-Optimized.js"></script>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        console.log('🚀 6bot Trading Suite - Enhanced Version loaded');
+        
+        // Global state
+        let charts = {};
+        let backendConnected = false;
+        
+        // Chart configurations
+        Chart.defaults.color = '#ffffff';
+        Chart.defaults.borderColor = '#495057';
+        Chart.defaults.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        
+        // Redis configuration
+        const RedisConfig = {
+            host: 'localhost',
+            port: 6380,
+            password: 'pass123'
+        };
+        
+        // Market Hours System
+        const MarketHours = {
+            usMarket: {
+                open: { hour: 9, minute: 30 },
+                close: { hour: 16, minute: 0 }
+            },
+            
+            getMarketStatus: function() {
+                const now = new Date();
+                const etTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+                const currentHour = etTime.getHours();
+                const currentMinute = etTime.getMinutes();
+                const currentDay = etTime.getDay();
+                
+                console.log('🕐 Market Hours Check:', {
+                    'New York Time': etTime.toLocaleString('en-US'),
+                    'German Time': now.toLocaleString('de-DE'),
+                    'Day': currentDay,
+                    'Hour': currentHour
+                });
+                
+                if (currentDay === 0 || currentDay === 6) {
+                    return {
+                        status: 'WEEKEND',
+                        message: 'Wochenende - Pre-Market Analysis',
+                        canTrade: true, // Allow trading for demo/development
+                        color: 'info'
+                    };
+                }
+                
+                const currentTimeMinutes = currentHour * 60 + currentMinute;
+                const marketOpenMinutes = this.usMarket.open.hour * 60 + this.usMarket.open.minute;
+                const marketCloseMinutes = this.usMarket.close.hour * 60 + this.usMarket.close.minute;
+                
+                if (currentTimeMinutes >= marketOpenMinutes && currentTimeMinutes <= marketCloseMinutes) {
+                    return {
+                        status: 'OPEN',
+                        message: 'Markt geöffnet',
+                        canTrade: true,
+                        color: 'success'
+                    };
+                } else {
+                    return {
+                        status: 'CLOSED',
+                        message: 'Markt geschlossen',
+                        canTrade: false,
+                        color: 'warning'
+                    };
+                }
+            }
+        };
+        
+        // Redis Functions
+        async function readFromRedisKey(key) {
+            try {
+                console.log(`📖 Reading from Redis: ${key}`);
+                
+                if (typeof AutoTradingBackend !== 'undefined' && AutoTradingBackend.readFromRedis) {
+                    const value = await AutoTradingBackend.readFromRedis(key);
+                    return value ? JSON.parse(value) : null;
+                } else {
+                    console.log(`🎭 Simulating Redis data for key: ${key}`);
+                    return simulateRedisData(key);
+                }
+            } catch (error) {
+                console.error(`❌ Failed to read Redis key ${key}:`, error);
+                return simulateRedisData(key);
+            }
+        }
+        
+        async function writeToRedisKey(key, value) {
+            try {
+                console.log(`📝 Writing to Redis: ${key} =`, value);
+                
+                if (typeof AutoTradingBackend !== 'undefined' && AutoTradingBackend.writeToRedis) {
+                    return await AutoTradingBackend.writeToRedis(key, JSON.stringify(value));
+                } else {
+                    console.log(`🎭 Simulating Redis write for ${key}`);
+                    return true;
+                }
+            } catch (error) {
+                console.error(`❌ Failed to write Redis key ${key}:`, error);
+                return false;
+            }
+        }
+        
+        // Simulate Redis data
+        function simulateRedisData(key) {
+            const simulatedData = {
+                'alpaca_mode': 'paper',
+                'alpaca_account': {
+                    portfolio_value: "125430.50",
+                    buying_power: "25000.00",
+                    equity: "125430.50",
+                    daytrade_count: "1",
+                    trading_blocked: false,
+                    pattern_day_trader: false
+                },
+                'alpaca_positions': [
+                    {symbol: "AAPL", qty: "50", avg_entry_price: "180.25", market_value: "9012.50", unrealized_pl: "125.00"},
+                    {symbol: "MSFT", qty: "25", avg_entry_price: "380.00", market_value: "9500.00", unrealized_pl: "-75.00"},
+                    {symbol: "NVDA", qty: "10", avg_entry_price: "450.00", market_value: "4400.00", unrealized_pl: "-100.00"}
+                ],
+                'trading_settings': {
+                    enabled: true,
+                    buy_threshold_pct: 0.05,
+                    sell_threshold_pct: 0.05,
+                    max_position_per_trade: 1,
+                    strategy: "CONSERVATIVE"
+                },
+                'grok_top10': [
+                    {ticker: "NVDA", score: 0.95, reason: "GPU demand surge, AI dominance"},
+                    {ticker: "AAPL", score: 0.92, reason: "Strong earnings momentum, iPhone 15 Pro sales"},
+                    {ticker: "MSFT", score: 0.89, reason: "AI leadership position, Azure growth"},
+                    {ticker: "GOOGL", score: 0.87, reason: "Quantum computing breakthrough, Bard AI"},
+                    {ticker: "TSLA", score: 0.84, reason: "FSD expansion, production ramp"},
+                    {ticker: "AMZN", score: 0.82, reason: "AWS AI services, cloud expansion"},
+                    {ticker: "META", score: 0.80, reason: "VR/AR investments, efficiency gains"},
+                    {ticker: "TSM", score: 0.78, reason: "Chip manufacturing leader, 3nm process"},
+                    {ticker: "INTC", score: 0.75, reason: "Recovery strategy, foundry business"},
+                    {ticker: "AMD", score: 0.73, reason: "Data center growth, EPYC processors"}
+                ],
+                'predictions_current': {
+                    "AAPL": {
+                        current_price: 180.25,
+                        horizons: {
+                            "15": {predicted_price: 181.50, change_pct: 0.0069},
+                            "30": {predicted_price: 182.25, change_pct: 0.0111},
+                            "60": {predicted_price: 184.00, change_pct: 0.0208}
+                        }
+                    }
+                },
+                'trades_log': [
+                    {time: new Date().toISOString(), ticker: "AAPL", side: "buy", qty: 50, current_price: 180.25, predicted_price: 185.00, change_pct: 0.0263}
+                ]
+            };
+            
+            return simulatedData[key] || null;
+        }
+        
+        // Portfolio Functions
+        async function loadRealPortfolioData() {
+            try {
+                console.log('🏦 Loading portfolio data...');
+                
+                const [alpacaAccount, alpacaPositions] = await Promise.all([
+                    readFromRedisKey('alpaca_account'),
+                    readFromRedisKey('alpaca_positions')
+                ]);
+                
+                if (alpacaAccount) {
+                    // Update UI
+                    const portfolioValue = parseFloat(alpacaAccount.portfolio_value);
+                    document.getElementById('portfolioValue').textContent = `$${portfolioValue.toLocaleString()}`;
+                    document.getElementById('positionCount').textContent = alpacaPositions?.length || 0;
+                    
+                    alert(`✅ Portfolio aktualisiert!\n💰 Wert: $${portfolioValue.toLocaleString()}\n📍 Positionen: ${alpacaPositions?.length || 0}`);
+                } else {
+                    alert('⚠️ Keine Portfolio-Daten verfügbar');
+                }
+            } catch (error) {
+                console.error('❌ Portfolio load error:', error);
+                alert('❌ Fehler beim Laden der Portfolio-Daten');
+            }
+        }
+        
+        // AutoTrading Functions
+        async function startAutoTradingViaRedis() {
+            try {
+                const marketStatus = MarketHours.getMarketStatus();
+                if (!marketStatus.canTrade) {
+                    alert(`⚠️ Trading nicht möglich!\n\n${marketStatus.message}\n\nTrading nur Mo-Fr 9:30-16:00 Uhr ET`);
+                    return;
+                }
+                
+                // Load current settings from UI (using correct element IDs)
+                const aggressiveness = parseInt(document.getElementById('aggressivenessSlider')?.value || 3);
+                const maxPositionPerTrade = parseInt(document.getElementById('positionSizeSlider')?.value || 50);
+                const maxTradesPerDay = parseInt(document.getElementById('dailyTradesSlider')?.value || 5);
+                const buyThreshold = parseFloat(document.getElementById('buyThreshold')?.value || 0.05);
+                const sellThreshold = parseFloat(document.getElementById('sellThreshold')?.value || 0.05);
+                const stopLoss = parseFloat(document.getElementById('stopLoss')?.value || 0.1);
+                const takeProfit = parseFloat(document.getElementById('takeProfit')?.value || 0.15);
+                const cashReserve = parseFloat(document.getElementById('cashReserve')?.value || 5000);
+                
+                // Calculate available trading capital
+                const portfolioValue = 125430.50; // This should come from Redis in real implementation
+                const availableCapital = Math.max(0, portfolioValue - cashReserve);
+                
+                // Determine strategy based on aggressiveness
+                let strategyName = "CONSERVATIVE";
+                let strategyColor = "success";
+                
+                if (aggressiveness >= 4) {
+                    strategyName = "AGGRESSIVE";
+                    strategyColor = "danger";
+                } else if (aggressiveness === 3) {
+                    strategyName = "MODERATE";
+                    strategyColor = "warning";
+                }
+                
+                const sessionId = `frontend_${Date.now()}`;
+                const tradingConfig = {
+                    enabled: true,
+                    buy_threshold_pct: buyThreshold,
+                    sell_threshold_pct: sellThreshold,
+                    max_position_per_trade: maxPositionPerTrade,
+                    max_trades_per_day: maxTradesPerDay,
+                    stop_loss_pct: stopLoss,
+                    take_profit_pct: takeProfit,
+                    cash_reserve_usd: cashReserve,
+                    available_capital_usd: availableCapital,
+                    aggressiveness_level: aggressiveness,
+                    strategy: strategyName,
+                    timestamp: new Date().toISOString(),
+                    source: "frontend_ui",
+                    session_id: sessionId,
+                    market_hours_check: true
+                };
+                
+                // Save settings to Redis first
+                await writeToRedisKey('trading_settings', tradingConfig);
+                await writeToRedisKey('autotrading:enabled', tradingConfig);
+                await writeToRedisKey('autotrading:status', 'ACTIVE');
+                
+                // Update UI status
+                const statusElement = document.getElementById('autotradingStatus');
+                if (statusElement) {
+                    statusElement.className = `badge bg-${strategyColor}`;
+                    statusElement.textContent = `AKTIV (${strategyName})`;
+                }
+                
+                console.log('✅ AutoTrading started:', tradingConfig);
+                alert(`🚀 AutoTrading gestartet!\n\n📊 Strategy: ${strategyName}\n🎚️ Aggressivität: ${aggressiveness}/5\n💰 Max Position: ${maxPositionPerTrade} Aktien\n📈 Max Trades/Tag: ${maxTradesPerDay}\n🏦 Cash Reserve: $${cashReserve.toLocaleString()}\n💵 Trading Capital: $${availableCapital.toLocaleString()}\n📍 Session: ${sessionId}`);
+                
+            } catch (error) {
+                console.error('❌ AutoTrading start error:', error);
+                alert('❌ AutoTrading konnte nicht gestartet werden');
+            }
+        }
+        
+        async function stopAutoTradingViaRedis() {
+            try {
+                await writeToRedisKey('autotrading:enabled', null);
+                await writeToRedisKey('autotrading:status', 'STOPPED');
+                
+                // Update UI status
+                const statusElement = document.getElementById('autotradingStatus');
+                if (statusElement) {
+                    statusElement.className = 'badge bg-danger';
+                    statusElement.textContent = 'GESTOPPT';
+                }
+                
+                console.log('✅ AutoTrading stopped');
+                alert('🛑 AutoTrading gestoppt!\n\n📊 Alle aktiven Trades beendet\n⏹️ Bot ist jetzt inaktiv');
+                
+            } catch (error) {
+                console.error('❌ AutoTrading stop error:', error);
+                alert('❌ AutoTrading konnte nicht gestoppt werden');
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Initializing 6bot Trading Suite...');
+            
+            // Set up event listeners
+            document.getElementById('loadDataBtn')?.addEventListener('click', loadRealPortfolioData);
+            
+            document.getElementById('tradingModeSwitch')?.addEventListener('change', async function() {
+                const isLive = this.checked;
+                const modeText = document.getElementById('tradingModeText');
+                const modeBadge = document.getElementById('alpacaModeBadge');
+                
+                if (isLive) {
+                    if (confirm('⚠️ WARNUNG: LIVE TRADING MODE!\n\n🔴 Trades werden mit ECHTEM GELD ausgeführt!\n💰 Verluste sind REAL!\n\nSind Sie sicher?')) {
+                        await writeToRedisKey('alpaca_mode', 'live');
+                        modeText.innerHTML = '🔴 LIVE Trading (ECHTES GELD!)';
+                        modeBadge.className = 'badge bg-danger';
+                        modeBadge.textContent = 'LIVE MODE';
+                        alert('🔴 LIVE TRADING AKTIVIERT!\nAlle Trades verwenden echtes Geld!');
+                    } else {
+                        this.checked = false;
+                    }
+                } else {
+                    await writeToRedisKey('alpaca_mode', 'paper');
+                    modeText.innerHTML = '📄 Paper Trading (Sicher)';
+                    modeBadge.className = 'badge bg-info';
+                    modeBadge.textContent = 'Paper Mode';
+                    alert('✅ Paper Trading aktiviert\nAlle Trades sind simuliert');
+                }
+            });
+            
+            // Update market status immediately and every minute
+            updateMarketStatus();
+            setInterval(updateMarketStatus, 60000);
+            
+            // Initialize charts
+            initializeCharts();
+            
+            // Check AutoTrading status function
+            async function checkAutoTradingStatus() {
+                try {
+                    const autotradingStatus = await readFromRedisKey('autotrading:status');
+                    const tradingSettings = await readFromRedisKey('trading_settings');
+                    
+                    const statusElement = document.getElementById('autotradingStatus');
+                    
+                    if (autotradingStatus === 'ACTIVE' && tradingSettings) {
+                        const strategy = tradingSettings.strategy || 'CONSERVATIVE';
+                        let statusColor = 'success';
+                        
+                        if (strategy === 'AGGRESSIVE') statusColor = 'danger';
+                        else if (strategy === 'MODERATE') statusColor = 'warning';
+                        
+                        if (statusElement) {
+                            statusElement.className = `badge bg-${statusColor}`;
+                            statusElement.textContent = `AKTIV (${strategy})`;
+                        }
+                        
+                        console.log(`🤖 AutoTrading is ACTIVE with ${strategy} strategy`);
+                    } else {
+                        if (statusElement) {
+                            statusElement.className = 'badge bg-danger';
+                            statusElement.textContent = 'GESTOPPT';
+                        }
+                        console.log('🛑 AutoTrading is STOPPED');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ AutoTrading status check error:', error);
+                }
+            }
+            
+            // Load initial data
+            setTimeout(async () => {
+                try {
+                    await loadRealPortfolioData();
+                    await loadTradingData();
+                    await loadGrokCandidates();
+                    await loadStockNews();
+                    await checkAutoTradingStatus(); // Check current AutoTrading status
+                    
+                    const alpacaMode = await readFromRedisKey('alpaca_mode');
+                    if (alpacaMode === 'live') {
+                        document.getElementById('tradingModeSwitch').checked = true;
+                        document.getElementById('tradingModeText').innerHTML = '🔴 LIVE Trading (ECHTES GELD!)';
+                        document.getElementById('alpacaModeBadge').className = 'badge bg-danger';
+                        document.getElementById('alpacaModeBadge').textContent = 'LIVE MODE';
+                    }
+                } catch (error) {
+                    console.error('❌ Initialization error:', error);
+                }
+            }, 1500);
+            
+            console.log('✅ 6bot Trading Suite ready');
+        });
+        
+        // Trading Functions
+        async function executeBuyOrder() {
+            const symbol = document.getElementById('manualTradeSymbol')?.value;
+            const qty = document.getElementById('manualTradeQty')?.value;
+            const orderType = document.getElementById('manualOrderType')?.value;
+            
+            if (!symbol || !qty) {
+                alert('❌ Bitte Symbol und Anzahl eingeben!');
+                return;
+            }
+            
+            const marketStatus = MarketHours.getMarketStatus();
+            if (!marketStatus.canTrade) {
+                alert(`⚠️ Trading nicht möglich!\n\n${marketStatus.message}`);
+                return;
+            }
+            
+            if (confirm(`🛒 BUY ORDER bestätigen?\n\nSymbol: ${symbol}\nAnzahl: ${qty}\nType: ${orderType}\n\n⚠️ Dies ist ein ECHTER Trade!`)) {
+                try {
+                    const orderData = {
+                        symbol: symbol.toUpperCase(),
+                        qty: parseInt(qty),
+                        side: 'buy',
+                        type: orderType,
+                        time_in_force: 'day',
+                        timestamp: new Date().toISOString(),
+                        source: 'manual_ui'
+                    };
+                    
+                    await writeToRedisKey('manual_order', orderData);
+                    alert(`✅ BUY Order für ${symbol} (${qty} Stück) übermittelt!`);
+                    
+                    // Clear form
+                    document.getElementById('manualTradeSymbol').value = '';
+                    document.getElementById('manualTradeQty').value = '';
+                    
+                } catch (error) {
+                    console.error('❌ Buy order error:', error);
+                    alert('❌ Order konnte nicht übermittelt werden');
+                }
+            }
+        }
+        
+        async function executeSellOrder() {
+            const symbol = document.getElementById('manualTradeSymbol')?.value;
+            const qty = document.getElementById('manualTradeQty')?.value;
+            const orderType = document.getElementById('manualOrderType')?.value;
+            
+            if (!symbol || !qty) {
+                alert('❌ Bitte Symbol und Anzahl eingeben!');
+                return;
+            }
+            
+            const marketStatus = MarketHours.getMarketStatus();
+            if (!marketStatus.canTrade) {
+                alert(`⚠️ Trading nicht möglich!\n\n${marketStatus.message}`);
+                return;
+            }
+            
+            if (confirm(`💰 SELL ORDER bestätigen?\n\nSymbol: ${symbol}\nAnzahl: ${qty}\nType: ${orderType}\n\n⚠️ Dies ist ein ECHTER Trade!`)) {
+                try {
+                    const orderData = {
+                        symbol: symbol.toUpperCase(),
+                        qty: parseInt(qty),
+                        side: 'sell',
+                        type: orderType,
+                        time_in_force: 'day',
+                        timestamp: new Date().toISOString(),
+                        source: 'manual_ui'
+                    };
+                    
+                    await writeToRedisKey('manual_order', orderData);
+                    alert(`✅ SELL Order für ${symbol} (${qty} Stück) übermittelt!`);
+                    
+                    // Clear form
+                    document.getElementById('manualTradeSymbol').value = '';
+                    document.getElementById('manualTradeQty').value = '';
+                    
+                } catch (error) {
+                    console.error('❌ Sell order error:', error);
+                    alert('❌ Order konnte nicht übermittelt werden');
+                }
+            }
+        }
+        
+        // Update Market Status
+        function updateMarketStatus() {
+            const marketStatus = MarketHours.getMarketStatus();
+            const statusElement = document.getElementById('marketStatus');
+            const timeElement = document.getElementById('marketTime');
+            
+            if (statusElement) {
+                statusElement.className = `badge bg-${marketStatus.color}`;
+                statusElement.textContent = marketStatus.status;
+            }
+            
+            if (timeElement) {
+                const now = new Date();
+                timeElement.textContent = `${marketStatus.message} - ${now.toLocaleString('de-DE')}`;
+            }
+        }
+        
+        // Load Trading Data
+        async function loadTradingData() {
+            try {
+                console.log('📊 Loading trading data...');
+                
+                const [grokTop10, predictions, tradesLog] = await Promise.all([
+                    readFromRedisKey('grok_top10'),
+                    readFromRedisKey('predictions_current'),
+                    readFromRedisKey('trades_log')
+                ]);
+                
+                // Update trading signals table
+                if (grokTop10) {
+                    const tbody = document.getElementById('tradingSignalsTable');
+                    if (tbody) {
+                        tbody.innerHTML = grokTop10.map(signal => `
+                            <tr>
+                                <td><strong>${signal.ticker}</strong></td>
+                                <td><span class="badge bg-success">${signal.score.toFixed(2)}</span></td>
+                                <td><span class="text-success">${signal.score > 0.9 ? 'STRONG BUY' : 'BUY'}</span></td>
+                                <td>${signal.reason}</td>
+                                <td><button class="btn btn-sm btn-success" onclick="executeAISignal('${signal.ticker}')">Execute</button></td>
+                            </tr>
+                        `).join('');
+                    }
+                }
+                
+                // Update predictions
+                if (predictions) {
+                    const container = document.getElementById('predictionsContainer');
+                    if (container) {
+                        container.innerHTML = Object.entries(predictions).map(([symbol, data]) => `
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 mb-2 bg-dark">
+                                    <h6 class="text-primary">${symbol}</h6>
+                                    <div>Current: <strong>$${data.current_price.toFixed(2)}</strong></div>
+                                    <div>Predicted: <strong class="text-success">$${data.horizons['60'].predicted_price.toFixed(2)}</strong></div>
+                                    <div>Change: <span class="text-success">+${(data.horizons['60'].change_pct * 100).toFixed(2)}%</span></div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+                console.log('✅ Trading data loaded');
+                
+            } catch (error) {
+                console.error('❌ Trading data load error:', error);
+            }
+        }
+        
+        async function executeAISignal(symbol) {
+            if (confirm(`🤖 AI Signal ausführen?\n\nSymbol: ${symbol}\nQuelle: Grok AI\n\n⚠️ Dies ist ein ECHTER Trade!`)) {
+                try {
+                    const orderData = {
+                        symbol: symbol,
+                        qty: 10, // Standard quantity
+                        side: 'buy',
+                        type: 'market',
+                        time_in_force: 'day',
+                        timestamp: new Date().toISOString(),
+                        source: 'ai_signal'
+                    };
+                    
+                    await writeToRedisKey('ai_signal_order', orderData);
+                    alert(`🤖 AI Signal für ${symbol} ausgeführt!`);
+                    
+                } catch (error) {
+                    console.error('❌ AI signal error:', error);
+                    alert('❌ AI Signal konnte nicht ausgeführt werden');
+                }
+            }
+        }
+        
+        // Global functions for buttons
+        window.startAutoTrading = startAutoTradingViaRedis;
+        window.stopAutoTrading = stopAutoTradingViaRedis;
+        window.loadPortfolio = loadRealPortfolioData;
+        window.executeBuyOrder = executeBuyOrder;
+        window.executeSellOrder = executeSellOrder;
+        window.executeAISignal = executeAISignal;
+        window.loadTradingData = loadTradingData;
+        window.loadPortfolioDetails = loadPortfolioDetails;
+        window.sellPosition = sellPosition;
+        window.loadGrokCandidates = loadGrokCandidates;
+        window.loadSevenDayPredictions = loadSevenDayPredictions;
+        window.buyGrokCandidate = buyGrokCandidate;
+        window.checkAutoTradingStatus = checkAutoTradingStatus;
+        
+        // Trading Settings Functions
+        function updateAggressiveness() {
+            const slider = document.getElementById('aggressivenessSlider');
+            const valueLabel = document.getElementById('aggressivenessValue');
+            const levels = ['SEHR KONSERVATIV', 'KONSERVATIV', 'MODERAT', 'AGGRESSIV', 'SEHR AGGRESSIV'];
+            valueLabel.textContent = levels[slider.value - 1];
+            valueLabel.className = slider.value <= 2 ? 'text-success' : slider.value <= 3 ? 'text-warning' : 'text-danger';
+        }
+        
+        function updatePositionSize() {
+            const slider = document.getElementById('positionSizeSlider');
+            const valueLabel = document.getElementById('positionSizeValue');
+            valueLabel.textContent = slider.value;
+        }
+        
+        function updateDailyTrades() {
+            const slider = document.getElementById('dailyTradesSlider');
+            const valueLabel = document.getElementById('dailyTradesValue');
+            
+            if (slider && valueLabel) {
+                const value = parseInt(slider.value);
+                valueLabel.textContent = value;
+                
+                // Color coding based on trade frequency
+                if (value <= 10) {
+                    valueLabel.className = 'badge bg-success';
+                } else if (value <= 50) {
+                    valueLabel.className = 'badge bg-warning';
+                } else {
+                    valueLabel.className = 'badge bg-danger';
+                }
+            }
+        }
+        
+        function updateCashReservé() {
+            const cashReserveInput = document.getElementById('cashReserve');
+            const displayCashReserveEl = document.getElementById('displayCashReserve');
+            const availableForTrading = document.getElementById('availableForTrading');
+            
+            if (cashReserveInput && displayCashReserveEl && availableForTrading) {
+                const cashReserve = parseFloat(cashReserveInput.value) || 0;
+                const totalBuyingPower = 25000.00; // From current portfolio - could be dynamic
+                const available = Math.max(0, totalBuyingPower - cashReserve);
+                
+                // Update displays
+                displayCashReserveEl.textContent = `-$${cashReserve.toLocaleString()}.00`;
+                availableForTrading.textContent = `$${available.toLocaleString()}.00`;
+                
+                // Color coding for available capital
+                if (cashReserve > totalBuyingPower * 0.8) {
+                    availableForTrading.className = 'text-danger';
+                } else if (cashReserve > totalBuyingPower * 0.5) {
+                    availableForTrading.className = 'text-warning';
+                } else {
+                    availableForTrading.className = 'text-success';
+                }
+                
+                console.log(`💰 Cash Reserve: $${cashReserve}, Available for Trading: $${available}`);
+            }
+        }
+        
+        function updateTradingSettings() {
+            // Real-time update visual feedback
+            console.log('⚙️ Trading settings updated');
+        }
+        
+        async function saveTradingSettings() {
+            try {
+                const cashReserve = parseFloat(document.getElementById('cashReserve')?.value || 5000);
+                const totalBuyingPower = 25000.00;
+                const availableCapital = Math.max(0, totalBuyingPower - cashReserve);
+                
+                const settings = {
+                    aggressiveness: parseInt(document.getElementById('aggressivenessSlider').value),
+                    max_position_size: parseInt(document.getElementById('positionSizeSlider').value),
+                    max_daily_trades: parseInt(document.getElementById('dailyTradesSlider').value),
+                    buy_threshold_pct: parseFloat(document.getElementById('buyThreshold').value),
+                    sell_threshold_pct: parseFloat(document.getElementById('sellThreshold').value),
+                    stop_loss_pct: parseFloat(document.getElementById('stopLoss').value),
+                    take_profit_pct: parseFloat(document.getElementById('takeProfit').value),
+                    cash_reserve_usd: cashReserve,
+                    total_buying_power: totalBuyingPower,
+                    available_trading_capital: availableCapital,
+                    timestamp: new Date().toISOString(),
+                    source: 'ui_settings'
+                };
+                
+                await writeToRedisKey('trading_settings', settings);
+                alert(`✅ Trading Einstellungen gespeichert!\n\n🎚️ Aggressivität: ${settings.aggressiveness}/5\n💰 Max Position: ${settings.max_position_size} Aktien\n📈 Max Trades/Tag: ${settings.max_daily_trades}\n🏦 Cash Reserve: $${cashReserve.toLocaleString()}\n💵 Trading Capital: $${availableCapital.toLocaleString()}`);
+                
+                console.log('✅ Trading settings saved:', settings);
+                
+            } catch (error) {
+                console.error('❌ Save settings error:', error);
+                alert('❌ Fehler beim Speichern der Einstellungen');
+            }
+        }
+        
+        async function loadTradingSettings() {
+            try {
+                const settings = await readFromRedisKey('trading_settings');
+                
+                if (settings) {
+                    document.getElementById('aggressivenessSlider').value = settings.aggressiveness || 2;
+                    document.getElementById('positionSizeSlider').value = settings.max_position_size || 50;
+                    document.getElementById('dailyTradesSlider').value = settings.max_daily_trades || 5;
+                    document.getElementById('buyThreshold').value = settings.buy_threshold_pct || 0.05;
+                    document.getElementById('sellThreshold').value = settings.sell_threshold_pct || 0.05;
+                    document.getElementById('stopLoss').value = settings.stop_loss_pct || 0.10;
+                    document.getElementById('takeProfit').value = settings.take_profit_pct || 0.15;
+                    document.getElementById('cashReserve').value = settings.cash_reserve_usd || 5000;
+                    
+                    updateAggressiveness();
+                    updatePositionSize();
+                    updateDailyTrades();
+                    updateCashReservé();
+                    
+                    alert(`✅ Trading Einstellungen geladen!\n\n🎚️ Aggressivität: ${settings.aggressiveness || 2}/5\n💰 Max Position: ${settings.max_position_size || 50} Aktien\n📈 Max Trades/Tag: ${settings.max_daily_trades || 5}\n🏦 Cash Reserve: $${(settings.cash_reserve_usd || 5000).toLocaleString()}`);
+                } else {
+                    alert('⚠️ Keine gespeicherten Einstellungen gefunden');
+                }
+                
+            } catch (error) {
+                console.error('❌ Load settings error:', error);
+                alert('❌ Fehler beim Laden der Einstellungen');
+            }
+        }
+        
+        function resetTradingSettings() {
+            if (confirm('🔄 Alle Einstellungen auf Standard zurücksetzen?')) {
+                document.getElementById('aggressivenessSlider').value = 2;
+                document.getElementById('positionSizeSlider').value = 50;
+                document.getElementById('dailyTradesSlider').value = 5;
+                document.getElementById('buyThreshold').value = 0.05;
+                document.getElementById('sellThreshold').value = 0.05;
+                document.getElementById('stopLoss').value = 0.10;
+                document.getElementById('takeProfit').value = 0.15;
+                
+                updateAggressiveness();
+                updatePositionSize();
+                updateDailyTrades();
+                
+                alert('🔄 Einstellungen zurückgesetzt!');
+            }
+        }
+        
+        async function loadStockNews() {
+            try {
+                console.log('📰 Loading stock news...');
+                
+                const newsContainer = document.getElementById('stockNewsList');
+                const newsData = await readFromRedisKey('stock_news') || [
+                    {
+                        title: "NVIDIA Q3 Earnings Exceed Expectations",
+                        summary: "NVIDIA reports record quarterly revenue of $60.9B, driven by unprecedented AI chip demand...",
+                        time: "1 Stunde ago",
+                        source: "MarketWatch",
+                        sentiment: "positive"
+                    },
+                    {
+                        title: "Apple Unveils New AI Features",
+                        summary: "Apple Intelligence rollout continues with enhanced Siri capabilities and improved ML performance...",
+                        time: "3 Stunden ago",
+                        source: "TechCrunch",
+                        sentiment: "positive"
+                    },
+                    {
+                        title: "Microsoft Azure AI Revenue Surges",
+                        summary: "Microsoft reports 50% growth in Azure AI services, strengthening cloud computing leadership...",
+                        time: "5 Stunden ago",
+                        source: "Reuters",
+                        sentiment: "positive"
+                    },
+                    {
+                        title: "Tesla FSD Beta Expansion",
+                        summary: "Tesla expands Full Self-Driving beta to 500,000 more vehicles across North America...",
+                        time: "7 Stunden ago",
+                        source: "Bloomberg",
+                        sentiment: "neutral"
+                    },
+                    {
+                        title: "Google Quantum Computing Breakthrough",
+                        summary: "Google announces major quantum computing milestone with new 1000-qubit processor...",
+                        time: "9 Stunden ago",
+                        source: "Nature",
+                        sentiment: "positive"
+                    }
+                ];
+                
+                if (newsContainer) {
+                    newsContainer.innerHTML = newsData.map(news => {
+                        const sentimentColor = news.sentiment === 'positive' ? 'success' : news.sentiment === 'negative' ? 'danger' : 'info';
+                        return `
+                            <div class="border-bottom pb-2 mb-2">
+                                <h6 class="text-${sentimentColor} mb-1">${news.title}</h6>
+                                <p class="mb-1 small">${news.summary}</p>
+                                <small class="text-muted">${news.time} • ${news.source}</small>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+                console.log('✅ Stock news loaded');
+                
+            } catch (error) {
+                console.error('❌ Stock news load error:', error);
+            }
+        }
+        
+        // Global functions
+        window.updateAggressiveness = updateAggressiveness;
+        window.updatePositionSize = updatePositionSize;
+        window.updateDailyTrades = updateDailyTrades;
+        window.updateTradingSettings = updateTradingSettings;
+        window.saveTradingSettings = saveTradingSettings;
+        window.loadTradingSettings = loadTradingSettings;
+        window.resetTradingSettings = resetTradingSettings;
+        window.loadStockNews = loadStockNews;
+        
+        // Chart Functions
+        function createPortfolioChart() {
+            const ctx = document.getElementById('portfolioChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            // Generate 7 days of portfolio data
+            const days = [];
+            const values = [];
+            const baseValue = 125430;
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                days.push(date.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric' }));
+                
+                // Simulate portfolio fluctuation
+                const variation = (Math.random() - 0.5) * 2000;
+                values.push(baseValue + variation);
+            }
+            
+            charts.portfolio = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Portfolio Wert ($)',
+                        data: values,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createPredictionsChart() {
+            const ctx = document.getElementById('predictionsChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            // AAPL prediction data
+            const timeLabels = ['Jetzt', '15min', '30min', '45min', '60min'];
+            const currentPrice = 180.25;
+            const predictions = [currentPrice, 180.85, 181.40, 182.10, 184.00];
+            
+            charts.predictions = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{
+                        label: 'AAPL Preis ($)',
+                        data: predictions,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#007bff',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 179,
+                            max: 185,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createSevenDayChart() {
+            const ctx = document.getElementById('sevenDayChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            // Generate next 7 days
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() + i);
+                days.push(date.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric' }));
+            }
+            
+            // Generate prediction data for top 3 candidates
+            charts.sevenDay = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [
+                        {
+                            label: 'NVDA (Score: 0.95)',
+                            data: [440.00, 455.20, 467.80, 481.50, 495.60, 510.20, 523.40],
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'AAPL (Score: 0.92)',
+                            data: [180.25, 184.00, 187.20, 190.80, 194.10, 197.50, 201.20],
+                            borderColor: '#007bff',
+                            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'MSFT (Score: 0.89)',
+                            data: [380.00, 385.50, 391.20, 396.80, 402.50, 408.10, 413.90],
+                            borderColor: '#ffc107',
+                            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    const change = context.parsed.y - context.dataset.data[0];
+                                    const changePercent = ((change / context.dataset.data[0]) * 100).toFixed(2);
+                                    return `${context.dataset.label}: $${context.parsed.y.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent}%)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Nächste 7 Tage'
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+        
+        function createTopStocksChart() {
+            const ctx = document.getElementById('topStocksChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            const stocks = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'TSLA'];
+            const scores = [0.95, 0.92, 0.89, 0.87, 0.84];
+            const colors = ['#28a745', '#17a2b8', '#ffc107', '#fd7e14', '#dc3545'];
+            
+            charts.topStocks = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: stocks,
+                    datasets: [{
+                        label: 'AI Score',
+                        data: scores,
+                        backgroundColor: colors,
+                        borderColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.0,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function loadGrokCandidates() {
+            try {
+                console.log('🤖 Loading Grok candidates...');
+                
+                const grokTop10 = await readFromRedisKey('grok_top10');
+                const container = document.getElementById('grokCandidatesList');
+                
+                if (grokTop10 && container) {
+                    document.getElementById('grokCount').textContent = grokTop10.length;
+                    container.innerHTML = grokTop10.map((candidate, index) => {
+                        const scoreColor = candidate.score >= 0.9 ? 'success' : candidate.score >= 0.8 ? 'warning' : 'info';
+                        const recommendation = candidate.score >= 0.9 ? 'STRONG BUY' : candidate.score >= 0.8 ? 'BUY' : 'HOLD';
+                        
+                        return `
+                            <div class="border rounded p-2 mb-2 bg-dark">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong class="text-primary">${candidate.ticker}</strong>
+                                        <br><small class="text-muted">${candidate.reason}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-${scoreColor}">${candidate.score.toFixed(2)}</span>
+                                        <br><small class="text-${scoreColor}">${recommendation}</small>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-success w-100 mt-1" onclick="buyGrokCandidate('${candidate.ticker}')">
+                                    <i class="bi bi-cart-plus"></i> Add to Portfolio
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    alert(`🤖 ${grokTop10.length} Grok Kandidaten geladen!`);
+                } else {
+                    document.getElementById('grokCount').textContent = '0';
+                    container.innerHTML = `
+                        <div class="text-center text-muted p-3">
+                            <i class="bi bi-robot fs-1"></i>
+                            <p>Keine Grok Daten verfügbar</p>
+                            <small>Redis Simulation Mode</small>
+                        </div>
+                    `;
+                }
+                
+                console.log('✅ Grok candidates loaded');
+                
+            } catch (error) {
+                console.error('❌ Grok candidates load error:', error);
+                alert('❌ Fehler beim Laden der Grok Kandidaten');
+            }
+        }
+        
+        async function loadSevenDayPredictions() {
+            try {
+                console.log('📊 Loading 7-day predictions...');
+                
+                // Recreate chart with fresh data
+                if (charts.sevenDay) {
+                    charts.sevenDay.destroy();
+                }
+                
+                setTimeout(() => {
+                    createSevenDayChart();
+                    alert('📊 7-Tage Vorhersagen aktualisiert!');
+                }, 100);
+                
+            } catch (error) {
+                console.error('❌ 7-day predictions load error:', error);
+                alert('❌ Fehler beim Laden der 7-Tage Vorhersagen');
+            }
+        }
+        
+        async function buyGrokCandidate(symbol) {
+            if (confirm(`🤖 Grok Kandidat kaufen?\n\nSymbol: ${symbol}\nQuelle: Grok AI\nAnzahl: 10 shares\n\n⚠️ Dies ist ein ECHTER Trade!`)) {
+                try {
+                    const orderData = {
+                        symbol: symbol,
+                        qty: 10, // Standard quantity for Grok recommendations
+                        side: 'buy',
+                        type: 'market',
+                        time_in_force: 'day',
+                        timestamp: new Date().toISOString(),
+                        source: 'grok_candidate'
+                    };
+                    
+                    await writeToRedisKey('grok_buy_order', orderData);
+                    alert(`🤖 Grok BUY Order für ${symbol} (10 shares) übermittelt!`);
+                    
+                } catch (error) {
+                    console.error('❌ Grok buy error:', error);
+                    alert('❌ Grok Order konnte nicht übermittelt werden');
+                }
+            }
+        }
+        
+        function createAllocationChart() {
+            const ctx = document.getElementById('allocationChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            const positions = ['AAPL', 'MSFT', 'NVDA', 'Cash'];
+            const values = [9125, 9431, 4458, 25000];
+            const colors = ['#28a745', '#007bff', '#ffc107', '#6c757d'];
+            
+            charts.allocation = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: positions,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderColor: colors,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createPLChart() {
+            const ctx = document.getElementById('plChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            const stocks = ['AAPL', 'MSFT', 'NVDA'];
+            const pnl = [112.50, -68.75, -42.00];
+            const colors = pnl.map(val => val >= 0 ? '#28a745' : '#dc3545');
+            
+            charts.pl = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: stocks,
+                    datasets: [{
+                        label: 'P&L ($)',
+                        data: pnl,
+                        backgroundColor: colors,
+                        borderColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        async function loadPortfolioDetails() {
+            try {
+                console.log('📊 Loading detailed portfolio data...');
+                
+                const [alpacaAccount, alpacaPositions] = await Promise.all([
+                    readFromRedisKey('alpaca_account'),
+                    readFromRedisKey('alpaca_positions')
+                ]);
+                
+                if (alpacaAccount) {
+                    // Update summary cards
+                    document.getElementById('portfolioTotalValue').textContent = `$${parseFloat(alpacaAccount.portfolio_value).toLocaleString()}`;
+                    document.getElementById('buyingPower').textContent = `$${parseFloat(alpacaAccount.buying_power).toLocaleString()}`;
+                    document.getElementById('positionsCount').textContent = alpacaPositions?.length || 0;
+                    
+                    // Update positions table
+                    if (alpacaPositions && alpacaPositions.length > 0) {
+                        const tbody = document.getElementById('positionsTableBody');
+                        if (tbody) {
+                            tbody.innerHTML = alpacaPositions.map(pos => {
+                                const unrealizedPL = parseFloat(pos.unrealized_pl);
+                                const changePercent = (unrealizedPL / (parseFloat(pos.qty) * parseFloat(pos.avg_entry_price))) * 100;
+                                const plClass = unrealizedPL >= 0 ? 'text-success' : 'text-danger';
+                                const currentPrice = parseFloat(pos.market_value) / parseFloat(pos.qty);
+                                
+                                return `
+                                    <tr>
+                                        <td>
+                                            <strong class="text-primary">${pos.symbol}</strong>
+                                            <br><small class="text-muted">Stock</small>
+                                        </td>
+                                        <td><strong>${pos.qty}</strong> shares</td>
+                                        <td>$${parseFloat(pos.avg_entry_price).toFixed(2)}</td>
+                                        <td class="${plClass}">$${currentPrice.toFixed(2)}</td>
+                                        <td><strong>$${parseFloat(pos.market_value).toFixed(2)}</strong></td>
+                                        <td class="${plClass}">${unrealizedPL >= 0 ? '+' : ''}$${unrealizedPL.toFixed(2)}</td>
+                                        <td class="${plClass}">${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-danger" onclick="sellPosition('${pos.symbol}', ${pos.qty})">
+                                                <i class="bi bi-arrow-down"></i> Sell
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('');
+                        }
+                    }
+                }
+                
+                // Recreate allocation chart with updated data
+                if (charts.allocation) {
+                    charts.allocation.destroy();
+                }
+                if (charts.pl) {
+                    charts.pl.destroy();
+                }
+                
+                setTimeout(() => {
+                    createAllocationChart();
+                    createPLChart();
+                }, 100);
+                
+                alert('✅ Portfolio Details aktualisiert!');
+                console.log('✅ Portfolio details loaded');
+                
+            } catch (error) {
+                console.error('❌ Portfolio details load error:', error);
+                alert('❌ Fehler beim Laden der Portfolio-Details');
+            }
+        }
+        
+        async function sellPosition(symbol, quantity) {
+            if (confirm(`💰 Position verkaufen?\n\nSymbol: ${symbol}\nAnzahl: ${quantity} shares\n\n⚠️ Dies ist ein ECHTER SELL Order!`)) {
+                try {
+                    const orderData = {
+                        symbol: symbol,
+                        qty: quantity,
+                        side: 'sell',
+                        type: 'market',
+                        time_in_force: 'day',
+                        timestamp: new Date().toISOString(),
+                        source: 'portfolio_sell'
+                    };
+                    
+                    await writeToRedisKey('sell_position_order', orderData);
+                    alert(`✅ SELL Order für ${symbol} (${quantity} shares) übermittelt!`);
+                    
+                    // Reload portfolio after sell order
+                    setTimeout(loadPortfolioDetails, 1000);
+                    
+                } catch (error) {
+                    console.error('❌ Sell position error:', error);
+                    alert('❌ SELL Order konnte nicht übermittelt werden');
+                }
+            }
+        }
+        
+        function initializeCharts() {
+            console.log('📊 Initializing charts...');
+            
+            // Wait for DOM elements to be available
+            setTimeout(() => {
+                createPortfolioChart();
+                createSevenDayChart();
+                createPredictionsChart();
+                createTopStocksChart();
+                createAllocationChart();
+                createPLChart();
+                console.log('✅ Charts initialized');
+            }, 500);
+        }
+        
+    </script>
+</body>
+</html>

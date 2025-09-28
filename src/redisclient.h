@@ -44,6 +44,17 @@ public:
     Q_INVOKABLE void getPredictionMetrics();
     Q_INVOKABLE void triggerMLTraining();
     Q_INVOKABLE void triggerGrokFetch();
+    
+    // Auto-Trading Methods
+    Q_INVOKABLE void enableAutoTrading(bool enabled);
+    Q_INVOKABLE void setTradingStrategy(const QString &strategy);
+    Q_INVOKABLE void executeTrade(const QString &symbol, const QString &action, int quantity, double price);
+    Q_INVOKABLE void getAutoTradingStatus();
+    Q_INVOKABLE void setRiskLevel(double level);
+    Q_INVOKABLE void getActiveTrades();
+    Q_INVOKABLE void emergencyStopAll();
+    Q_INVOKABLE void getTradeHistory();
+    Q_INVOKABLE void setAutoSettings(const QJsonObject &settings);
 
 signals:
     void connectedChanged();
@@ -52,6 +63,14 @@ signals:
     void passwordChanged();
     void dataReceived(const QString &key, const QJsonObject &data);
     void errorOccurred(const QString &error);
+    
+    // Auto-Trading Signals
+    void autoTradingStatusChanged(bool enabled);
+    void tradeExecuted(const QString &symbol, const QString &action, int quantity, double price, const QString &result);
+    void tradingStrategyChanged(const QString &strategy);
+    void riskLevelChanged(double level);
+    void emergencyStopTriggered();
+    void tradeHistoryUpdated();
 
 private slots:
     void onConnected();

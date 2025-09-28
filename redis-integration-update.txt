@@ -1,0 +1,65 @@
+🔄 REDIS INTEGRATION UPDATE - 27.09.2025
+=========================================
+
+✅ UPDATES BASIEREND AUF redis-endpoint.txt:
+
+🔧 Redis Connection Config:
+- Host: 'redis' (Docker internal, nicht localhost)
+- Port: 6380 (Ihr Setup bestätigt)
+- Password: 'pass123'
+
+🚀 AutoTrading Functions (AT.TXT Protocol):
+- startAutoTradingViaRedis() → Schreibt autotrading:enabled
+- stopAutoTradingViaRedis() → DEL autotrading:enabled
+- checkAutoTradingStatus() → Liest backend feedback
+- updateAutoTradingUI() → Updates UI mit backend status
+
+📊 AutoTrading Keys (Frontend → Backend):
+✅ autotrading:enabled → Full config object mit session_id
+✅ autotrading:status → "ACTIVE" | "STOPPED"  
+✅ autotrading:timestamp → ISO8601
+
+📤 Backend Feedback Keys (Backend → Frontend):
+✅ autotrading:backend_status → "RUNNING" | "STOPPED" | "MARKET_CLOSED" | "ERROR"
+✅ autotrading:session_active → Active session ID
+✅ autotrading:stats → Trades count, volume, etc.
+✅ autotrading:last_update → Latest backend heartbeat
+✅ autotrading:error → Error messages
+
+🎯 Key Features:
+- Session Management mit unique session_id
+- Market Hours Validation embedded in config
+- Real-time status monitoring
+- Error handling und UI feedback
+- AT.TXT compliant key deletion (DEL autotrading:enabled)
+
+🏦 Trading Mode Integration:
+- alpaca_mode switching zwischen 'paper' und 'live'
+- Sicherheitsconfirmation für Live Mode
+- Account status loading (alpaca_account, alpaca_positions)
+- Trading settings control (trading_settings)
+
+📈 ML & Analytics Integration:
+- predictions_current → Multi-horizon predictions
+- grok_topstocks_prediction → AI recommendations  
+- market_data → Real-time prices
+- trades_log → Execution history
+
+🔄 Data Loading Functions:
+- loadRedisData() → Comprehensive data sync
+- loadAlpacaAccount() → Account & positions
+- loadGrokRecommendations() → AI analysis
+- loadMLPredictions() → Model forecasts
+- loadTradesLog() → Recent trades
+
+⚠️ NÄCHSTE SCHRITTE:
+1. Backend muss monitor_autotrading_frontend Task implementieren
+2. Frontend kann jetzt AutoTrading starten/stoppen via Redis
+3. Real-time status monitoring funktioniert
+4. Live/Paper Mode switching ist bereit
+
+🎮 USAGE:
+1. loadRedisData() → Sync mit aktuellem Redis state
+2. toggleTradingMode() → Switch Paper ↔ Live  
+3. startAutoTradingViaRedis() → Start trading
+4. checkAutoTradingStatus() → Monitor progress

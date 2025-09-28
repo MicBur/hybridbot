@@ -394,7 +394,7 @@ Format:
 Key: trading_settings
 Format:
 {
-  "enabled": false,
+  "enabled": true,
   "buy_threshold_pct": 0.05,
   "sell_threshold_pct": 0.05,
   "max_position_per_trade": 1
@@ -436,11 +436,11 @@ Hinweise zu Retention / Limits:
 
 Option A - Direkt via Redis CLI:
 ```bash
-# Trading einschalten
-SET trading_settings '{"enabled": true, "buy_threshold_pct": 0.05, "sell_threshold_pct": 0.05, "max_position_per_trade": 1}'
+# Trading ausschalten (falls erforderlich)
+SET trading_settings '{"enabled": false, "buy_threshold_pct": 0.05, "sell_threshold_pct": 0.05, "max_position_per_trade": 1}'
 
-# Trading ausschalten  
-SET trading_settings '{"enabled": false}'
+# Trading einschalten (Standard)
+SET trading_settings '{"enabled": true, "buy_threshold_pct": 0.05, "sell_threshold_pct": 0.05, "max_position_per_trade": 1}'
 ```
 
 Option B - Fehlende REST Endpunkte (noch zu implementieren):
@@ -452,7 +452,7 @@ GET /api/trading/settings
 GET /api/trading/status
 ```
 
-**Aktueller Status:** Das System hat vollständige Autotrade-Logik (`trade_bot` Task, Risk Management, Settings), aber **keine HTTP-Endpunkte** für Frontend-Integration. Trading läuft automatisch alle 10 Minuten wenn `trading_settings.enabled = true`.
+**Aktueller Status:** Das System hat vollständige Autotrade-Logik (`trade_bot` Task, Risk Management, Settings), aber **keine HTTP-Endpunkte** für Frontend-Integration. Trading läuft automatisch alle 10 Minuten und ist **per Default aktiviert** (`trading_settings.enabled = true`).
 
 Manuelles Retrain (Celery Task):
 Aufruf von train_model.delay("manual") (oder passenden Endpoint implementieren). Danach aktualisiert sich retrain_status.

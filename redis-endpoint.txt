@@ -1,0 +1,300 @@
+🔴 REDIS ENDPOINTS DOCUMENTATION - QBOT TRADING SYSTEM
+========================================================
+
+📊 BACKEND.TXT COMPLIANCE KEYS (Haupt-System)
+==============================================
+
+✅ trading_settings
+Format: JSON Object
+{
+  "enabled": true/false,
+  "buy_threshold_pct": 0.02,
+  "sell_threshold_pct": 0.02, 
+  "max_position_per_trade": 1,
+  "strategy": "CONSERVATIVE",
+  "last_updated": "ISO8601",
+  "updated_by": "string"
+}
+
+✅ trading_status  
+Format: JSON Object
+{
+  "last_run": "ISO8601",
+  "last_error": null,
+  "trades_today": 0,
+  "total_volume": 0.0,
+  "active": true/false,
+  "next_run": "ISO8601",
+  "worker_pid": 123
+}
+
+✅ system_status
+Format: JSON Object
+{
+  "redis_connected": true,
+  "postgres_connected": true,
+  "finnhub_api_active": false,
+  "alpaca_api_active": true,
+  "grok_api_active": true,
+  "yfinance_api_active": false,
+  "twelvedata_api_active": true,
+  "worker_running": true,
+  "last_heartbeat": "ISO8601",
+  "uptime_seconds": 3600,
+  "memory_usage_mb": 177,
+  "cpu_usage_percent": 0.0,
+  "market_open": true/false,
+  "last_market_check": "ISO8601"
+}
+
+✅ risk_settings
+Format: JSON Object
+{
+  "daily_notional_cap": 50000,
+  "max_position_per_ticker": 5,
+  "cooldown_minutes": 30,
+  "max_trades_per_run": 3,
+  "emergency_stop_active": false
+}
+
+✅ portfolio_positions
+Format: JSON Array
+[
+  {
+    "ticker": "AAPL",
+    "qty": "100", 
+    "avg_entry_price": "150.00",
+    "market_value": "15000.00",
+    "unrealized_pl": "500.00",
+    "side": "long"
+  }
+]
+
+✅ trades_log
+Format: JSON Array (max 200 entries)
+[
+  {
+    "time": "ISO8601",
+    "ticker": "AAPL",
+    "side": "buy/sell",
+    "qty": 1,
+    "current_price": 150.00,
+    "predicted_price": 160.00,
+    "change_pct": 0.0667,
+    "order_response": {...}
+  }
+]
+
+🕒 MARKET HOURS VALIDATION KEYS (NEU)
+======================================
+
+✅ market_status
+Format: JSON Object
+{
+  "market_open": true/false,
+  "current_time_et": "2025-09-26T09:34:17.267499-04:00",
+  "next_open": "ISO8601",
+  "trading_day": true/false,
+  "market_session": "OPEN/CLOSED/ERROR"
+}
+
+🔄 FRONTEND-BACKEND COMMUNICATION (AT.TXT)
+==========================================
+
+📥 FRONTEND WRITES (Input Keys):
+autotrading:enabled
+Format: JSON Object
+{
+  "enabled": true,
+  "buy_threshold_pct": 0.05,
+  "sell_threshold_pct": 0.05,
+  "max_position_per_trade": 1,
+  "strategy": "CONSERVATIVE", 
+  "timestamp": "ISO8601",
+  "source": "frontend_ui",
+  "market_hours_check": true,
+  "session_id": "frontend_1727354130123",
+  "trading_hours": {
+    "market_open": "09:30",
+    "market_close": "16:00",
+    "timezone": "America/New_York"
+  }
+}
+
+autotrading:status
+Format: String
+Values: "ACTIVE" | "STOPPED"
+
+📤 BACKEND WRITES (Feedback Keys):
+autotrading:backend_status
+Format: String
+Values: "RUNNING" | "STOPPED" | "MARKET_CLOSED" | "ERROR" | "CONFIG_ERROR"
+
+autotrading:session_active
+Format: String (Session ID)
+Example: "frontend_1727354130123"
+
+autotrading:last_trade
+Format: JSON Object (Latest trade from trades_log)
+
+autotrading:active_positions  
+Format: JSON Array (Same as portfolio_positions)
+
+autotrading:stats
+Format: JSON Object
+{
+  "trades_today": 5,
+  "total_volume": 1250.00,
+  "last_run": "ISO8601",
+  "next_run": "ISO8601", 
+  "positions_count": 3
+}
+
+autotrading:error
+Format: String (Error message when something fails)
+
+autotrading:last_update
+Format: String (ISO8601 timestamp)
+
+autotrading:stopped_at
+Format: String (ISO8601 timestamp when stopped)
+
+🤖 ML & PREDICTION KEYS
+=======================
+
+✅ predictions_current
+Format: JSON Object
+{
+  "AAPL": {
+    "15": 160.50,
+    "30": 162.00,
+    "60": 165.00
+  }
+}
+
+✅ predictions_pending
+Format: JSON Array
+[
+  {
+    "ticker": "AAPL",
+    "horizon": "15",
+    "predicted": 160.00,
+    "timestamp": "ISO8601",
+    "eta": "ISO8601"
+  }
+]
+
+✅ model_trained
+Format: String
+Values: "true" | "false"
+
+✅ prediction_quality_metrics_history
+Format: JSON Array
+[
+  {
+    "time": "ISO8601",
+    "window_hours": 24,
+    "per_horizon": {
+      "15": {
+        "count": 22,
+        "mae": 148.42,
+        "mape": 1.93,
+        "rmse": 216.59,
+        "avg_deviation": 1.93
+      }
+    }
+  }
+]
+
+📊 DATA & ANALYTICS KEYS
+========================
+
+✅ market_data
+Format: JSON Object
+{
+  "AAPL": {
+    "price": 150.00,
+    "timestamp": "ISO8601",
+    "source": "twelvedata"
+  }
+}
+
+✅ market_source_stats
+Format: JSON Object
+{
+  "time": "ISO8601",
+  "finnhub": 22,
+  "twelvedata": 16,
+  "fmp": 0,
+  "yfinance": 21,
+  "stub": 0,
+  "failed": 0
+}
+
+✅ dynamic_tickers
+Format: JSON Array
+["AAPL", "MSFT", "NVDA", "GOOGL", ...]
+
+✅ grok_topstocks_prediction
+Format: JSON Object
+{
+  "time": "ISO8601",
+  "items": [
+    {
+      "ticker": "AAPL",
+      "expected_gain": 0.05,
+      "sentiment": 0.8,
+      "reason": "Strong earnings expected"
+    }
+  ]
+}
+
+🔧 SYSTEM MONITORING KEYS
+=========================
+
+✅ risk_status
+Format: JSON Object
+{
+  "notional_today": 1250.00,
+  "last_reset": "2025-09-26",
+  "cooldowns": {
+    "AAPL": "ISO8601"
+  }
+}
+
+✅ retrain_status
+Format: JSON Object
+{
+  "last_retrain": "ISO8601",
+  "trigger": "deviation",
+  "pending": false
+}
+
+✅ deviation_tracker
+Format: JSON Array (Track prediction deviations)
+
+🎯 CELERY TASKS (Scheduled)
+===========================
+- fetch_data: Every 5 minutes
+- generate_predictions: Every 15 minutes  
+- trade_bot: Every 10 minutes
+- monitor_autotrading_frontend: Every minute (NEU)
+- system_heartbeat: Every 30 seconds
+
+🚨 CRITICAL NOTES
+=================
+1. Market Hours Validation: All trading stops when US market closed
+2. Session Management: Only one autotrading session active at time
+3. Risk Limits: daily_notional_cap and cooldowns enforced
+4. Frontend Communication: Uses autotrading:* prefix keys
+5. Backend Compliance: Uses trading_* prefix for internal logic
+
+📍 REDIS CONNECTION
+===================
+Host: redis (Docker internal)
+Port: 6379
+Password: pass123
+Database: 0
+
+Last Updated: 2025-09-27
+System: QBot Trading Backend v2.0 with Market Hours Safety + Frontend Integration

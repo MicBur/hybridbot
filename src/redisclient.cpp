@@ -303,3 +303,82 @@ QString RedisClient::parseRedisResponse(const QByteArray &response)
         return QString::fromUtf8(response);
     }
 }
+
+// Auto-Trading Implementation
+void RedisClient::enableAutoTrading(bool enabled)
+{
+    sendRedisCommand(QString("SET auto_trading_enabled %1").arg(enabled ? "true" : "false"));
+    emit autoTradingStatusChanged(enabled);
+    qDebug() << "Auto-Trading" << (enabled ? "ENABLED" : "DISABLED");
+}
+
+void RedisClient::setTradingStrategy(const QString &strategy)
+{
+    sendRedisCommand(QString("SET trading_strategy %1").arg(strategy));
+    emit tradingStrategyChanged(strategy);
+    qDebug() << "Trading strategy set to:" << strategy;
+}
+
+void RedisClient::executeTrade(const QString &symbol, const QString &action, int quantity, double price)
+{
+    QJsonObject tradeData;
+    tradeData["symbol"] = symbol;
+    tradeData["action"] = action;
+    tradeData["quantity"] = quantity;
+    tradeData["price"] = price;
+    tradeData["timestamp"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+    
+    QJsonDocument doc(tradeData);
+    QString tradeJson = doc.toJson(QJsonDocument::Compact);
+    
+    sendRedisCommand(QString("LPUSH trade_queue %1").arg(tradeJson));
+    sendRedisCommand(QString("LPUSH trade_history %1").arg(tradeJson));
+    
+    emit tradeExecuted(symbol, action, quantity, price, "QUEUED");
+    qDebug() << "Trade executed:" << action << quantity << symbol << "@" << price;
+}
+
+void RedisClient::getAutoTradingStatus()
+{
+    sendRedisCommand("GET auto_trading_enabled");
+    sendRedisCommand("GET trading_strategy");
+    sendRedisCommand("GET risk_level");
+}
+
+void RedisClient::setRiskLevel(double level)
+{
+    sendRedisCommand(QString("SET risk_level %1").arg(level));
+    emit riskLevelChanged(level);
+    qDebug() << "Risk level set to:" << level;
+}
+
+void RedisClient::getActiveTrades()
+{
+    sendRedisCommand("LRANGE active_trades 0 -1");
+}
+
+void RedisClient::emergencyStopAll()
+{
+    sendRedisCommand("SET emergency_stop true");
+    sendRedisCommand("SET auto_trading_enabled false");
+    sendRedisCommand("DEL trade_queue");
+    
+    emit emergencyStopTriggered();
+    emit autoTradingStatusChanged(false);
+    qDebug() << "EMERGENCY STOP: All trading halted!";
+}
+
+void RedisClient::getTradeHistory()
+{
+    sendRedisCommand("LRANGE trade_history 0 99");
+    emit tradeHistoryUpdated();
+}
+
+void RedisClient::setAutoSettings(const QJsonObject &settings)
+{
+    QJsonDocument doc(settings);
+    QString settingsJson = doc.toJson(QJsonDocument::Compact);
+    
+    sendRedisCommand(QString("SET auto_trading_settings %1").arg(settingsJson));
+    qDebug() << "Auto-trading settings updated:" << settingsJson;
+}

@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Local Redis Slave for Frontend (Port 6380)
+  redis-slave:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./redis-slave.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    restart: unless-stopped
+    environment:
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=${REMOTE_MASTER_IP}
+      - REDIS_MASTER_PORT=6379
+      - REDIS_MASTER_PASSWORD=pass123
+    networks:
+      - frontend_network
+
+  # Qt Frontend Application
+  qt-frontend:
+    build:
+      context: ./backend/qt-frontend
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_HOST=localhost
+      - REDIS_PORT=6380
+      - REDIS_PASSWORD=pass123
+      - QT_QPA_PLATFORM=xcb  # or wayland/offscreen depending on system
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ~/.Xauthority:/root/.Xauthority:rw
+    network_mode: host  # Needed for X11 display
+    stdin_open: true
+    tty: true
+
+networks:
+  frontend_network:
+    driver: bridge

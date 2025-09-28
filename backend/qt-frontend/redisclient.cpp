@@ -6,10 +6,12 @@
 RedisClient::RedisClient(const QString &host, int port, const QString &password, QObject *parent)
     : QObject(parent), m_host(host), m_port(port), m_password(password), m_connected(false)
 {
-    // Verwende QProcess für redis-cli Verbindung zum Remote-Server
-    // Format: redis-cli -h REMOTE_HOST -p 6379 -a pass123 get key
-    m_connected = true; 
-    emit connected();
+    // Verwende QProcess für redis-cli Verbindung
+    // Bei lokalem Slave (6380) oder direktem Remote-Server
+    // Format: redis-cli -h HOST -p PORT -a PASSWORD get key
+    
+    // Test connection
+    testConnection();
     
     qDebug() << "Connecting to Redis at" << host << ":" << port;
 }
@@ -38,26 +40,52 @@ QString RedisClient::get(const QString &key)
     
     qWarning() << "Redis GET failed for key:" << key << process.readAllStandardError();
     
-    // Fallback zu Mock-Daten bei Verbindungsfehlern
-    if (key == "market_data") {
-        QJsonObject data = mockMarketData();
-        return QJsonDocument(data).toJson(QJsonDocument::Compact);
-    }
-    
+    // No fallback to mock data - return empty string on error
     return QString();
 }
 
 bool RedisClient::set(const QString &key, const QString &value)
 {
-    // Mock-Implementierung
-    qDebug() << "Setting Redis key:" << key << "=" << value;
-    return true;
+    // Real implementation using redis-cli
+    QProcess process;
+    QStringList arguments;
+    arguments << "-h" << m_host 
+              << "-p" << QString::number(m_port)
+              << "-a" << m_password
+              << "set" << key << value;
+    
+    process.start("redis-cli", arguments);
+    process.waitForFinished(5000);
+    
+    if (process.exitCode() == 0) {
+        qDebug() << "Successfully set Redis key:" << key;
+        return true;
+    }
+    
+    qWarning() << "Redis SET failed for key:" << key << process.readAllStandardError();
+    return false;
 }
 
 QStringList RedisClient::keys(const QString &pattern)
 {
-    // Mock-Implementierung
-    return QStringList() << "market_data" << "model_trained" << "model_path";
+    // Real implementation using redis-cli
+    QProcess process;
+    QStringList arguments;
+    arguments << "-h" << m_host 
+              << "-p" << QString::number(m_port)
+              << "-a" << m_password
+              << "keys" << pattern;
+    
+    process.start("redis-cli", arguments);
+    process.waitForFinished(5000);
+    
+    if (process.exitCode() == 0) {
+        QString result = process.readAllStandardOutput();
+        return result.split('\n', Qt::SkipEmptyParts);
+    }
+    
+    qWarning() << "Redis KEYS failed for pattern:" << pattern << process.readAllStandardError();
+    return QStringList();
 }
 
 QJsonObject RedisClient::getMarketData()
@@ -72,7 +100,7 @@ QJsonObject RedisClient::getMarketData()
     
     if (error.error != QJsonParseError::NoError) {
         qWarning() << "Failed to parse market data JSON:" << error.errorString();
-        return mockMarketData(); // Fallback
+        return QJsonObject(); // Return empty object instead of mock data
     }
     
     return doc.object();
@@ -88,22 +116,37 @@ QString RedisClient::getModelPath()
     return get("model_path");
 }
 
+void RedisClient::testConnection()
+{
+    // Test Redis connection
+    QProcess process;
+    QStringList arguments;
+    arguments << "-h" << m_host 
+              << "-p" << QString::number(m_port)
+              << "-a" << m_password
+              << "ping";
+    
+    process.start("redis-cli", arguments);
+    process.waitForFinished(2000);
+    
+    if (process.exitCode() == 0) {
+        QString result = process.readAllStandardOutput().trimmed();
+        if (result == "PONG") {
+            m_connected = true;
+            emit connected();
+            qDebug() << "Redis connection successful";
+        } else {
+            m_connected = false;
+            qWarning() << "Redis ping failed, unexpected response:" << result;
+        }
+    } else {
+        m_connected = false;
+        qWarning() << "Redis connection failed:" << process.readAllStandardError();
+    }
+}
+
 QJsonObject RedisClient::mockMarketData()
 {
-    // Mock-Daten für Entwicklung/Testing
-    QJsonObject data;
-    
-    QStringList tickers = {"AAPL", "NVDA", "MSFT", "TSLA", "AMZN", "META", "GOOGL", "BRK.B", "AVGO", "JPM", 
-                          "LLY", "V", "XOM", "PG", "UNH", "MA", "JNJ", "COST", "HD", "BAC"};
-    
-    for (const QString &ticker : tickers) {
-        QJsonObject tickerData;
-        tickerData["price"] = 100.0 + (qrand() % 400); // Random price 100-500
-        tickerData["change"] = -10.0 + (qrand() % 20);  // Random change -10 to +10
-        tickerData["change_percent"] = tickerData["change"].toDouble() / tickerData["price"].toDouble() * 100;
-        
-        data[ticker] = tickerData;
-    }
-    
-    return data;
+    // This method is now deprecated - we use real data only
+    return QJsonObject();
 }

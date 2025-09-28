@@ -39,6 +39,7 @@ private:
     
     // Mock-Implementierung (in echter App würde hiredis verwendet)
     QJsonObject mockMarketData();
+    void testConnection();
 };
 
 #endif // REDISCLIENT_H
